@@ -19,23 +19,33 @@
                 span {
                     padding: 1px;
                 }
+                img {
+                    border-radius: 5px;
+                }
                 
             </style>
             
         </head>
         <body>
+            
             <div id="header" style="width: 350px text-align:center;">
-                <a id="back" href="debate.html" style="inline-block: true;"><img src="arrow_48x48.png" width="20" height="20"></img></a>
+                <a id="back" href="debate.html" style="inline-block: true;">
+                    <img src="icons/arrow_48x48.png" width="20" height="20"></img>
+                </a>
+                <!-- add back the href later -->
+                <a id="newdoc" style="inline-block:true;" target="_blank" href="https://docs.google.com/create">
+                    <img src="icons/newtab.png" width="20" height="20" style="inline-block: true; display: inline; float: right;"></img>
+                </a>
+                <img id="copier" src="icons/copy.png" width="20" height="20" style="inline-block: true; display: inline; float: right; margin-right:10px; margin-top:1px;" ></img>
                 <p style="font-size: 15pt; padding-left: 10px; margin-top:0px; padding-top:0px; text-align:center;">here's ur card :></p>
-                
+            </div>
+            <div id="main" style="margin-top:0px;">
                 <p style="font-size: 11pt; width: 350px; overflow:scroll; margin-bottom: 0px;" id=cardhead>
                 temp <br>
                 temp
                 </p>
-            </div>
-            <div id="main" style="margin-top:0px;">
                 <span id="topcontext" style="font-size: 8pt; inline-block: true; margin-right: 0px;">Highlight some text to use this feature!</span>
-                <span id="highlight" style="font-family: calibri-bold,sans-serif;background-color: rgb(167, 196, 229);font-size: 11pt; inline-block: true; padding: 0px;">test</span>
+                <span id="highlight" style="font-family: calibri-bold;background-color: rgb(167, 196, 229);font-size: 11pt; inline-block: true; padding: 0px;"></span>
                 <span id="bottomcontext" style="margin-left: 0px;font-size: 8pt; inline-block: true;"></span>
             </div>
         </body>
