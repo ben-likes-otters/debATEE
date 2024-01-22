@@ -1864,6 +1864,8 @@ chrome.tabs.query({active: true, lastFocusedWindow: true}, tabs => {
     if (!['!','?','.'].includes(formattedstuff.charAt(formattedstuff.length -1))) {
         formattedstuff += "."
     }
+    chrome.storage.local.set({"cardheader":formattedstuff});
+    
     document.getElementById("cardhead").innerHTML = formattedstuff;
     chrome.scripting.executeScript( { //update selection while we're at it
     target: {tabId: tabs[0].id},
