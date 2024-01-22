@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "DebATEE",
+  "description": "All purpose debate extension!",
+  "version": "1.0",
+  "action": {
+    "default_popup": "debate.html",
+    "default_icon": "smallicon.png"
+  },
+  "icons": {
+      "48": "smallicon.png"
+  },
+  "permissions": [
+     "activeTab",
+     "scripting",
+     "storage"
+  ],
+  "background": {
+      "service-worker": "bgg.js"
+  },
+  "host_permissions": [
+      "https://corsproxy.io/*",
+      "https://archive.ph/*",
+      "https://archive.is/*"
+  ]
+}
+

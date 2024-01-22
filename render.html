@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+    <html>
+        <head>
+            <script defer src=render.js></script>
+            <style>
+                @font-face {
+                    font-family: calibri;
+                    src: url(calibri-regular.ttf);
+                }
+                @font-face {
+                    font-family: calibri-bold;
+                    src: url(calibrib.ttf);
+                }
+                body {
+                    text-align: left;
+                    font-family: calibri, sans-serif;
+                    background-color: white;
+                }
+                span {
+                    padding: 1px;
+                }
+                
+            </style>
+            
+        </head>
+        <body>
+            <div id="header" style="width: 350px text-align:center;">
+                <a id="back" href="debate.html" style="inline-block: true;"><img src="arrow_48x48.png" width="20" height="20"></img></a>
+                <p style="font-size: 15pt; padding-left: 10px; margin-top:0px; padding-top:0px; text-align:center;">here's ur card :></p>
+                
+                <p style="font-size: 11pt; width: 350px; overflow:scroll; margin-bottom: 0px;" id=cardhead>
+                temp <br>
+                temp
+                </p>
+            </div>
+            <div id="main" style="margin-top:0px;">
+                <span id="topcontext" style="font-size: 8pt; inline-block: true; margin-right: 0px;">Highlight some text to use this feature!</span>
+                <span id="highlight" style="font-family: calibri-bold,sans-serif;background-color: rgb(167, 196, 229);font-size: 11pt; inline-block: true; padding: 0px;">test</span>
+                <span id="bottomcontext" style="margin-left: 0px;font-size: 8pt; inline-block: true;"></span>
+            </div>
+        </body>
+        
+    </html>
+

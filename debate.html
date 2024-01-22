@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script defer src=popup.js></script>
+        <style>
+            @font-face {
+                font-family: calibri;
+                src: url(calibri-regular.ttf)
+            }
+            body {
+                text-align: center;
+                font-family: calibri, sans-serif;
+                background-color: rgb(75, 75, 80);
+            }
+            #title {
+                color: dodgerblue;
+                margin-left: 70px;
+                margin-right:70px;
+            }
+            
+            .links {
+                color: white;
+                font-size: 15px;
+                margin: 10px;
+                padding: 5px;
+            }
+            p {
+                color: white;
+                font-size: 20px;
+                margin: 10px;
+            }
+        </style>
+        
+    </head>
+    <body>
+        <div id="header">
+            <h1 id="title">DebATE</p>
+        </div>
+        
+        <div id="main">
+            <div id="paywalls">
+                <p style="color:white">Bypass paywalls</p>
+                <p id="errorplace" style="display:none">Archive link fetch failed</p>
+                <a class="links" id="archiveph" href="https://archive.ph" target="_blank">Archive.ph</a>
+                <a class="links" id="archiveis" href="https://archive.is" target="_blank">Archive.is</a>
+                <br></br>
+                <a class="links" id="12ftio" href="https://12ft.io" target="_blank">12ft.io</a>
+                <p id="temp"></p>
+            </div>
+            <div id="cards">
+                <p style="color:white">Cut cards</p>
+                <p style="font-size:10px;" id="cardhead">Author. Date. Title.</p>
+                <a class="links" id="doclink" href="/render.html">Make card with selection</a>
+            </div>
+        </div>
+        <br>
+        <div id="footer">
+            <a style="font-size: 15px; color:white;" href="">Learn more!</a>
+    </body>
+    
+</html>
