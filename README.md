@@ -9,5 +9,5 @@ debate [chrome] extension!! made by ben!
 * Includes option to copy the formatted card and open a google doc (separate buttons!)
     * I wanted to make this automatically paste in the google doc but google docs is very weird :(
 
-##Download Instructions
+## Download Instructions
 Go to releases and find the latest release!
