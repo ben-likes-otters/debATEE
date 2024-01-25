@@ -1341,7 +1341,7 @@ Date.parseExact = function(s, fx) {
 function computeCite(url) {
     const parser = new DOMParser();
     var xmlHttp = new XMLHttpRequest();
-    xmlHttp.open("GET", url, false);
+    xmlHttp.open("GET", "https://corsproxy.io/?"+url, false);
     xmlHttp.send(null);
     responsexml = parser.parseFromString(xmlHttp.responseText,"text/html");
     console.log(responsexml);
