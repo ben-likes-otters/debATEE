@@ -157,6 +157,19 @@ chrome.tabs.query({active: true, lastFocusedWindow: true}, tabs => {
             document.getElementById("highlight").innerHTML = "<u><b>"+snippethighlight+"</b></u>";
             document.getElementById("topcontext").innerHTML = snippetfront;
             document.getElementById("bottomcontext").innerHTML = snippetback;
+            
+            chrome.storage.local.get(["color"]).then((result) => {
+                try {
+                    //result.color.toString();
+                    //document.getElementById("color").value = result.color;
+                    strcolor = result.color.toString() //just in case
+                    rgblist = strcolor.replace(/[^\d,]/g, '').split(',');
+                    document.getElementById("highlight").style.backgroundColor = "rgb("+strcolor+")"; //rgblist[0],rgblist[1],rgblist[2])
+                    
+                } catch {
+                    console.log("no color set");
+                }
+            });
         }
     });
 });
