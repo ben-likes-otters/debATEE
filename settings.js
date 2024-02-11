@@ -25,6 +25,7 @@ function save_color() {
     chrome.storage.local.set({"color": value}).then(() => {
         console.log("Color is set");
     });
+    document.getElementById("sample").style.backgroundColor = "rgb("+value+")";
 }
 document.getElementById("color").addEventListener("mouseout", save_color);
 document.getElementById("color").addEventListener("focusout", save_color);

@@ -2,13 +2,13 @@
   "manifest_version": 3,
   "name": "DebATEE",
   "description": "All purpose debate extension!",
-  "version": "1.1.2",
+  "version": "1.2.1",
   "action": {
     "default_popup": "debate.html",
-    "default_icon": "smallicon.png"
+    "default_icon": "icons/smallicon.png"
   },
   "icons": {
-      "48": "smallicon.png"
+      "48": "icons/smallicon.png"
   },
   "permissions": [
      "activeTab",

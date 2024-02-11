@@ -32,7 +32,7 @@ function getfinalarchiveph(url) {
             return "https://"+righturl
         }
     } catch {
-        return "https://archive.ph"
+        return "https://archive.ph/"+url
     }
 }
 
@@ -66,7 +66,7 @@ function getfinalarchiveis(url) {
             return "https://"+righturl
         }
     } catch {
-        return "https://archive.is"
+        return "https://archive.is/"+url
     }
 }
 
@@ -1338,13 +1338,40 @@ Date.parseExact = function(s, fx) {
 };
 
 
-function computeCite(url) {
+async function computeCite(url) {
     const parser = new DOMParser();
     var xmlHttp = new XMLHttpRequest();
-    xmlHttp.open("GET", "https://corsproxy.io/?"+url, false);
-    xmlHttp.send(null);
-    responsexml = parser.parseFromString(xmlHttp.responseText,"text/html");
-    console.log(responsexml);
+    var responsexml;
+    try {
+        xmlHttp.open("GET", "https://corsproxy.io/?"+encodeURIComponent(url), false);
+        xmlHttp.send(null);
+    } catch (err) {
+        console.log("failed")
+        //inject a script to store the entire code
+        chrome.tabs.query({active: true, lastFocusedWindow: true}, tabs => {
+            chrome.scripting.executeScript( {
+                target: {tabId: tabs[0].id},
+                files: ["getdocumentcode.js"]
+            });
+        });
+        await chrome.storage.local.get(["document"]).then((result) => {
+            responsexml = result["document"];
+            console.log("responsexml "+responsexml.substring(0,100));
+        });
+    }
+    responsexml = parser.parseFromString(responsexml,"text/html");
+    
+    console.log("responsexml "+responsexml);
+
+    
+    /*fetch("https://corsproxy.io/?"+encodeURIComponent(url)).then((response) => {
+        responsetext = response.responseText;
+        console.log(responsetext)
+    });
+    console.log("responsetext"+responsetext)*/
+    
+    
+    //console.log(responsexml);
     //Variable declarations
     var arrDivs;
     var arrSpans;
@@ -1407,6 +1434,7 @@ function computeCite(url) {
             catch(err)
             {
                 console.log(err)
+                console.log("continuing")
             }
             
         }
@@ -1422,6 +1450,10 @@ function computeCite(url) {
         if (arrAuthors.length <= 0) {arrAuthors = responsexml.getElementsByName("dC.Creator")}
         if (arrAuthors.length <= 0) {arrAuthors = responsexml.getElementsByName("dc.Creator")}
         if (arrAuthors.length <= 0) {arrAuthors = responsexml.getElementsByName("Dc.Creator")} //Try DC.creator
+        if (arrAuthors.length <= 0) {
+            arrAuthors_col = responsexml.getElementsByClassName("authors");
+            arrAuthors = Array.prototype.slice.call(arrAuthors_col);
+        }
         if (arrAuthors.length <= 0) {
             for (i = 0; i < arrMeta.length; i++) {
                 if (arrMeta[i].getAttribute("name") == "ces:authors") {
@@ -1593,12 +1625,14 @@ function computeCite(url) {
         catch(err)
         {
             console.log(err)
+            console.log("continuing")
         }
     }
     
     if (arrDates.length <= 0) {
         arrDates = responsexml.getElementsByName("Date");
     } //Try Date
+    
     if (arrDates.length <= 0) {
         arrDates = responsexml.getElementsByName("created");
     } //Try created
@@ -1609,37 +1643,74 @@ function computeCite(url) {
         arrDates = responsexml.getElementsByName("DC.date");
     } //Try DC.date
     if (arrDates.length <= 0) {
+        console.log("finding dc.date")
+
         arrDates = responsexml.getElementsByName("dc.date");
     } //Try dc.date
     if (arrDates.length <= 0) {
         arrDates = responsexml.getElementsByName("DC.date.issued");
+        console.log("finding dc.date.issued")
+
     } //Try DC.date.issued
     if (arrDates.length <= 0) {
         arrDates = responsexml.getElementsByName("dc.date.issued");
     } //Try dc.date.issued
     if (arrDates.length <= 0) {
+        console.log("finding dcterms.create")
+
         arrDates = responsexml.getElementsByName("dcterms.created");
     } //Try dcterms.created
     if (arrDates.length <= 0) {
+        console.log("finding dcterms.created")
+
         arrDates = responsexml.getElementsByName("DCterms.created");
     } //Try DCterms.created
     if (arrDates.length <= 0) {
+        console.log("finding dcterms.modified")
+
         arrDates = responsexml.getElementsByName("dcterms.modified");
     } //Try dcterms.modified
     if (arrDates.length <= 0) {
+        console.log("finding dcterms.modified")
+
         arrDates = responsexml.getElementsByName("DCterms.modified");
     } //Try DCterms.modified
     if (arrDates.length <= 0) {
+        console.log("finding sailthru.date")
+
         arrDates = responsexml.getElementsByName("sailthru.date");
     } //Try sailthru.date
-    
+    if (arrDates.length <= 0) {
+        console.log("finding fm-vol-iss-date")
+
+        arrDates_col = responsexml.getElementsByClassName("fm-vol-iss-date");
+        arrDates = Array.prototype.slice.call(arrDates_col);
+    }
+    if (arrDates.length <= 0) {
+        console.log("finding timestamp")
+        arrDates_col = responsexml.getElementsByClassName("timestamp");
+        arrDates = Array.prototype.slice.call(arrDates_col);
+    }
+    if (arrDates.length <= 0) {
+        console.log("finidng revdate")
+        arrDates_col = responsexml.getElementsByClassName("revDate");
+        arrDates = Array.prototype.slice.call(arrDates_col);
+    }
+    if (arrDates.length <= 0) {
+        arrDates = responsexml.getElementsByName("citation_date");
+    }
     
     //If anything found, assign it to Date
     if (arrDates.length > 0) {
-        console.log(arrDates);
+        console.log("arrdates");
+        console.log(arrDates)
         if (Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)){
             try {
                 strDate = arrDates[0].content;
+                if (strDate === undefined) {
+                    strDate = arrDates[0].innerText
+                }
+                console.log("strdate: "+strDate)
             } catch {
                 console.log("catched")
             }
@@ -1719,6 +1790,11 @@ function computeCite(url) {
         if (strDate.length > 10 && strDate.indexOf(" ") == -1 && strDate.indexOf("T") == 10) {
             strDate = strDate.slice(0, 10);
         }
+        strDate = strDate.toLowerCase()
+        strDate = strDate.replace("published","");
+        strDate = strDate.replace("online", "");
+        strDate = strDate.replace(".","");
+        strDate = strDate.replace("on","");
         console.log(strDate);
         d = Date.parse(strDate);
         console.log(d)
@@ -1832,16 +1908,16 @@ function toTitleCase(str) {
 
 
 
+async function main() {
+    
+    let tabs = await chrome.tabs.query({active: true, lastFocusedWindow: true});
+    url = tabs[0].url
 
-
-chrome.tabs.query({active: true, lastFocusedWindow: true}, tabs => {
-    let url = tabs[0].url;
     // use `url` here inside the callback because it's asynchronous!
     //document.getElementById("temp").innerHTML = url;
     var archiveph_url = getfinalarchiveph(url);
     console.log("archiveph: "+archiveph_url);
-    if (archiveph_url == "https://archive.ph" || archiveph_url == "https://") {
-        document.getElementById("errorplace").setAttribute("style", "color:red;font-size: 10px;");
+    if (archiveph_url == "https://archive.ph" || archiveph_url == "https://") {        document.getElementById("errorplace").setAttribute("style", "color:red;font-size: 10px;");
     }
     var archiveis_url = getfinalarchiveis(url);
     var twelveftio_url = getfinal12ftio(url);
@@ -1851,26 +1927,31 @@ chrome.tabs.query({active: true, lastFocusedWindow: true}, tabs => {
     
     document.getElementById("archiveis").setAttribute("href", archiveis_url);
     document.getElementById("archiveis").setAttribute("title", archiveis_url);
-
+    
     document.getElementById("12ftio").setAttribute("href", twelveftio_url);
     document.getElementById("12ftio").setAttribute("title", twelveftio_url);
-
+    
     console.log('here');
-    let stuff = computeCite(url);
+    let stuff = await computeCite(url);
     console.log(stuff);
     
     var formattedstuff = stuff[0] + ". " + stuff[2] + ". " + stuff[1];
-    console.log(formattedstuff)
-    if (!['!','?','.'].includes(formattedstuff.charAt(formattedstuff.length -1))) {
-        formattedstuff += "."
+    console.log("formattedstuff");
+    console.log(formattedstuff);
+    try {
+        if(!['!','?','.'].includes(formattedstuff.charAt(formattedstuff.length-1))) {
+            formattedstuff += "."
+        }
+    } catch {
+        console.log("errored")
     }
     chrome.storage.local.set({"cardheader":formattedstuff});
     
     document.getElementById("cardhead").innerHTML = formattedstuff;
     chrome.scripting.executeScript( { //update selection while we're at it
-    target: {tabId: tabs[0].id},
-    files: ["codeforinject.js"]
+        target: {tabId: tabs[0].id},
+        files: ["codeforinject.js"]
     });
-});
+}
 
-
+main();

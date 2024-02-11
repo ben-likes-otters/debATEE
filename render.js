@@ -68,8 +68,8 @@ chrome.tabs.query({active: true, lastFocusedWindow: true}, tabs => {
     
     
     chrome.scripting.executeScript( {
-    target: {tabId: tabs[0].id},
-    files: ["codeforinject.js"]
+        target: {tabId: tabs[0].id},
+        files: ["codeforinject.js"]
     });
     
     chrome.storage.local.get(["selected", "anchor", "focus","innertext"]).then((result) => {
