@@ -1340,28 +1340,27 @@ Date.parseExact = function(s, fx) {
 
 async function computeCite(url) {
     const parser = new DOMParser();
-    var xmlHttp = new XMLHttpRequest();
+    //var xmlHttp = new XMLHttpRequest();
     var responsexml;
-    try {
-        xmlHttp.open("GET", "https://corsproxy.io/?"+encodeURIComponent(url), false);
-        xmlHttp.send(null);
-    } catch (err) {
-        console.log("failed")
-        //inject a script to store the entire code
-        chrome.tabs.query({active: true, lastFocusedWindow: true}, tabs => {
-            chrome.scripting.executeScript( {
-                target: {tabId: tabs[0].id},
-                files: ["getdocumentcode.js"]
-            });
-        });
-        await chrome.storage.local.get(["document"]).then((result) => {
-            responsexml = result["document"];
-            console.log("responsexml "+responsexml.substring(0,100));
-        });
-    }
-    responsexml = parser.parseFromString(responsexml,"text/html");
+    tabs = await chrome.tabs.query({active: true, lastFocusedWindow: true});
     
-    console.log("responsexml "+responsexml);
+    await chrome.scripting.executeScript({
+            target: {tabId: tabs[0].id},
+            files: ["getdocumentcode.js"]
+    });
+    
+    responsexml = await chrome.storage.local.get(["document"]);/*.then((result) => {
+            responsexml = result["document"];
+            console.log("responsexml 1359"+responsexml.substring(0,100));
+        });*/
+                                                                            
+    console.log(responsexml.document);
+        
+    
+    responsexml = parser.parseFromString(responsexml.document,"text/html");
+    
+    console.log("responsexml 1367");
+    console.log(responsexml);
 
     
     /*fetch("https://corsproxy.io/?"+encodeURIComponent(url)).then((response) => {
@@ -1824,13 +1823,17 @@ async function computeCite(url) {
     
     arrTitles = responsexml.getElementsByName("og:title"); //Try og:title
     if (arrTitles.length <= 0) {
+        console.log('dctitle');
         arrTitles = responsexml.getElementsByName("DC.title");
     } //Try DC.title
     if (arrTitles.length <= 0) {
+        console.log('headline');
         arrTitles = responsexml.getElementsByName("headline");
     } //Try headline
     if (arrTitles.length <= 0) { //If no name tags, loop meta tags instead
+        console.log('metas');
         for (i = 0; i < arrMeta.length; i++) {
+            console.log(i)
             if (arrMeta[i].getAttribute("property") == "og:title") {
                 strTitle = arrMeta[i].content;
             } //Find og:title in property attributes
@@ -1838,13 +1841,18 @@ async function computeCite(url) {
     }
     
     //If anything found, assign it to Title
-    if (typeof arrTitle != 'undefined') {
+    if (typeof arrTitle != 'undefined' && strTitle != '') {
         strTitle = arrTitles[0].content;
     }
     
     //Worst case, use html title
-    if (typeof strTitle == 'undefined') {
+    if (typeof strTitle == 'undefined' || strTitle == '') {
         strTitle = responsexml.title;
+        //console.log(strTitle);
+    }
+    //give up
+    if (typeof strTitle == 'undefined' || strTitle == '') {
+        strTitle = "No title found";
     }
     
     //Slice off | and -

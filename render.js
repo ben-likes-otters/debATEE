@@ -54,13 +54,16 @@ chrome.tabs.query({active: true, lastFocusedWindow: true}, tabs => {
             try {
                 result.initials.toString();
                 initials = result.initials;
-                formattedcardhead = formattedstuff + " <em>//" + initials + "</em>"+ "<br><a style=\"color:rgb(40, 84, 197)\" href=\""+url+"\" title=\""+url+"\"><u>" +url+"</u></a>";
+                formattedcardhead1 = formattedstuff + " <em>//" + initials + "</em>";
+                formattedcardhead2 = "<a style=\"color:rgb(40, 84, 197)\" href=\""+url+"\" title=\""+url+"\"><u>"+url.trim()+"</u></a>";
                 
             } catch {
                 console.log("caught")
-                formattedcardhead = formattedstuff + "<br><a style=\"color:rgb(40, 84, 197)\" href=\""+url+"\" title=\""+url+"\"><u>" +url+"</u></a>";
+                formattedcardhead1 = formattedstuff;
+                formattedcardhead2 = "<a style=\"color:rgb(40, 84, 197)\" href=\""+url+"\" title=\""+url+"\"><u>"+url.trim()+"</u></a>";
             }
-            document.getElementById("cardhead").innerHTML = formattedcardhead;
+            document.getElementById("cardhead1").innerHTML = formattedcardhead1+"\n"+formattedcardhead2;
+            //document.getElementById("cardhead2").innerHTML = formattedcardhead2;
 
         });
     });
