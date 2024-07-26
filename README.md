@@ -10,4 +10,4 @@ debate [chrome] extension!! made by ben!
     * I wanted to make this automatically paste in the google doc but google docs is very weird :(
 
 ## Download Instructions
-Go to releases and find the latest release!
+Go to [releases](https://github.com/ben-likes-otters/debATEE/releases) and find the latest release!
