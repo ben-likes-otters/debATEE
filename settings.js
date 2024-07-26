@@ -43,3 +43,32 @@ chrome.storage.local.get(["color"]).then((result) => {
         console.log("no color set");
     }
 });
+
+function update_head() {
+    console.log("updating head")
+    console.log(document.getElementById("NS"));
+    if (document.getElementById("NS").checked) {
+        chrome.storage.local.set({"usingNS": true}).then(() => {
+            console.log("Head is set:true");
+        });
+    } else {
+        chrome.storage.local.set({"usingNS": false}).then(() => {
+            console.log("Head is set:false");
+        });
+    }
+}
+
+document.getElementById("NS").addEventListener("mouseout", update_head);
+document.getElementById("NatCir").addEventListener("mouseout", update_head);
+
+chrome.storage.local.get(["usingNS"]).then((result) => {
+    console.log("UsingNS:" + result.usingNS)
+
+    if (result.usingNS) {
+        document.getElementById("NS").setAttribute("checked","true");
+        console.log(document.getElementById("NS"));
+    } else {
+        document.getElementById("NatCir").setAttribute("checked","true");
+        console.log(document.getElementById("NatCir"));
+    }
+});

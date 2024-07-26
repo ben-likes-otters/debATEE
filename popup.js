@@ -14,11 +14,11 @@ async function updatedarchiveph(url) {
             //console.log(newresponsetext);
             var submitid = newresponsetext;
             submitid = submitid.slice(submitid.indexOf("type=\"hidden\""));
-            console.log(submitid);
+            //console.log(submitid);
             submitid = submitid.slice(submitid.indexOf("value="));
             submitid = submitid.slice(submitid.indexOf("\"")+1);
             submitid = submitid.slice(0, submitid.indexOf("\""));
-            console.log(submitid);
+            //console.log(submitid);
             submitid = encodeURIComponent(submitid);
             return "https://archive.ph/submit/?submitid="+submitid+"&url="+url;
         } else {
@@ -28,7 +28,7 @@ async function updatedarchiveph(url) {
             righturl = righturl.slice(righturl.indexOf("TEXT-BLOCK"))
             righturl = righturl.slice(righturl.indexOf("archive.ph"))
             righturl = righturl.slice(0,righturl.indexOf("\""))
-            console.log("line 31"+righturl)
+            //console.log("line 31"+righturl)
             return "https://"+righturl
         }
     } catch (error) {
@@ -53,11 +53,11 @@ async function updatedarchiveis(url) {
             //console.log(newresponsetext);
             var submitid = newresponsetext;
             submitid = submitid.slice(submitid.indexOf("type=\"hidden\""));
-            console.log(submitid);
+            //console.log(submitid);
             submitid = submitid.slice(submitid.indexOf("value="));
             submitid = submitid.slice(submitid.indexOf("\"")+1);
             submitid = submitid.slice(0, submitid.indexOf("\""));
-            console.log(submitid);
+            //console.log(submitid);
             submitid = encodeURIComponent(submitid);
             return "https://archive.is/submit/?submitid="+submitid+"&url="+url;
         } else {
@@ -67,7 +67,7 @@ async function updatedarchiveis(url) {
             righturl = righturl.slice(righturl.indexOf("TEXT-BLOCK"))
             righturl = righturl.slice(righturl.indexOf("archive.is"))
             righturl = righturl.slice(0,righturl.indexOf("\""))
-            console.log("line 31"+righturl)
+            //console.log("line 31"+righturl)
             return "https://"+righturl
         }
     } catch (error) {
@@ -92,7 +92,7 @@ function getfinalarchiveph(url) {
             xmlHttp.open("GET", "https://corsproxy.io/?https://archive.ph/?url="+url, false);
             xmlHttp.timeout = 2000;
             xmlHttp.send(null);
-            console.log(xmlHttp.responseText);
+            //console.log(xmlHttp.responseText);
             var submitid = xmlHttp.responseText;
             submitid = submitid.slice(submitid.indexOf("type=\"hidden\""))
             console.log(submitid)
@@ -130,7 +130,7 @@ function getfinalarchiveis(url) {
             xmlHttp.open("GET", "https://corsproxy.io/?https://archive.is/?url="+url, false);
             xmlHttp.timeout = 2000;
             xmlHttp.send(null);
-            console.log(xmlHttp.responseText);
+            //console.log(xmlHttp.responseText);
             var submitid = xmlHttp.responseText;
             submitid = submitid.slice(submitid.indexOf("type=\"hidden\""))
             console.log(submitid)
@@ -141,7 +141,7 @@ function getfinalarchiveis(url) {
             submitid = encodeURIComponent(submitid);
             return "https://archive.is/submit/?submitid="+submitid+"&url="+url
         } else {
-            console.log(xmlHttp.responseText)
+            //console.log(xmlHttp.responseText)
             var righturl = xmlHttp.responseText;
             //console.log(responsetext)
             righturl = righturl.slice(righturl.indexOf("TEXT-BLOCK"))
@@ -1693,18 +1693,20 @@ async function computeCite(url) {
     if (arrDates.length <= 0) {
         try {
             let parsedJson = JSON.parse(responsexml.querySelectorAll('script[type="application/ld+json"]')[0].innerHTML)
-            if (Array.isArray(parsedJson)){
-                arrDates = parsedJson[0]
-            }
-            if (parsedJson.datePublished){
-                if (Array.isArray(parsedJson.datePublished)){
-                    arrDates = parsedJson.datePublished[0]
-                } else {
-                    arrDates = parsedJson.datePublished
+            
+            for (var i = 0; i<parsedJson.length; i++) {
+                if (parsedJson[i].datePublished){
+                    if (Array.isArray(parsedJson[i].datePublished)){
+                        arrDates = parsedJson[i].datePublished[0]
+                    } else {
+                        arrDates = parsedJson[i].datePublished
+                    }
+                }
+
+                if (Array.isArray(parsedJson[i])){
+                    arrDates = parsedJson[i]
                 }
             }
-            
-            
         }
         catch(err)
         {
@@ -1712,7 +1714,7 @@ async function computeCite(url) {
             console.log("continuing")
         }
     }
-    
+
     if (arrDates.length <= 0) {
         arrDates = responsexml.getElementsByName("Date");
     } //Try Date
@@ -1783,10 +1785,67 @@ async function computeCite(url) {
     if (arrDates.length <= 0) {
         arrDates = responsexml.getElementsByName("citation_date");
     }
+    if (arrDates.length <= 0) {
+        arrDates_col = responsexml.getElementsByClassName("epub-date");
+        arrDates = Array.prototype.slice.call(arrDates_col);
+    }
+    if (arrDates.length <= 0) {
+        arrDates_col = responsexml.getElementsByClassName("article-header__date-ttr");
+        arrDates = Array.prototype.slice.call(arrDates_col);
+    }
+    if (arrDates.length <= 0) {
+        console.log("finding property datepublished");
+        arrDates_col = responsexml.querySelectorAll("span[property=datePublished]");
+        arrDates = Array.prototype.slice.call(arrDates_col);
+    }
+    if (arrDates.length <= 0) {
+        console.log("finding tag time (content)");
+        arrDates_tmp = responsexml.getElementsByTagName("time");
+        try {
+            for (var i = 0; i < arrDates_tmp.length; i++) {
+                temp = arrDates_tmp[i].getAttribute("content");
+                /*if (temp.includes("T")) {
+                 temp = temp.slice(0,temp.indexOf("T"));
+                 }*/
+                if (temp != null) {
+                    arrDates = temp; //slightly weird but i think it works
+                    //console.log(arrDates_tmp[i]);
+                }
+                
+            }
+        } catch {
+            console.log("not found");
+        }
+    }
+    if (arrDates.length <= 0) {
+        console.log("finding tag time (datetime)");
+        arrDates_tmp = responsexml.getElementsByTagName("time");
+        try {
+            for (var i = 0; i < arrDates_tmp.length; i++) {
+                temp = arrDates_tmp[i].getAttribute("datetime");
+                /*if (temp.includes("T")) {
+                 temp = temp.slice(0,temp.indexOf("T"));
+                 }*/
+                if (temp != null) {
+                    arrDates = temp; //slightly weird but i think it works
+                    //console.log(arrDates_tmp[i]);
+                }
+                
+            }
+        } catch {
+            console.log("not found");
+        }
+    }
+    
+    if (arrDates.length <= 0) {
+        console.log("finding node__published");
+        arrDates_col = responsexml.getElementsByClassName("node__published");
+        arrDates = Array.prototype.slice.call(arrDates_col);
+    }
     
     //If anything found, assign it to Date
     if (arrDates.length > 0) {
-        console.log("arrdates");
+        console.log("arrdates:");
         console.log(arrDates)
         if (Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)){
             try {
@@ -1868,6 +1927,8 @@ async function computeCite(url) {
             }
         }
     }
+    console.log("arrdates: ");
+    console.log(arrDates);
     //Convert date with parser
     if (strDate != null && typeof strDate != 'undefined') {
         //Clean up date if it has a combined date/time code that breaks parser
@@ -1918,7 +1979,7 @@ async function computeCite(url) {
     if (arrTitles.length <= 0) { //If no name tags, loop meta tags instead
         console.log('metas');
         for (i = 0; i < arrMeta.length; i++) {
-            console.log(i)
+            //console.log(i)
             if (arrMeta[i].getAttribute("property") == "og:title") {
                 strTitle = arrMeta[i].content;
             } //Find og:title in property attributes
@@ -2012,16 +2073,31 @@ async function main() {
     let stuff = await computeCite(url);
     console.log(stuff);
     
-    var formattedstuff = stuff[0] + ". " + stuff[2] + ". " + stuff[1];
+    chrome.storage.local.set({"headerdata":stuff});
+
+    let usingns = await chrome.storage.local.get(["usingNS"])
+    console.log("usingns: "+ usingns.usingNS)
+    if (usingns.usingNS) {
+        var formattedstuff = stuff[0] + ". " + stuff[2] + ". " + stuff[1];
+        try {
+            if(!['!','?','.'].includes(formattedstuff.charAt(formattedstuff.length-1))) {
+                formattedstuff += "."
+            }
+        } catch {
+            console.log("errored")
+        }
+    
+    } else {
+        if (stuff[0].includes(" ")) {
+                    formattedstuff = stuff[0].split(" ")[1] +  " " + stuff[2].substring(stuff[2].length-2) + " " + "(" + stuff[0] + ", " + stuff[2] + ", " + stuff[1] + ")"
+                } else {
+                    formattedstuff = stuff[0] +  " " + stuff[2].substring(stuff[2].length-2) + " " + "(" + stuff[0] + ", " + stuff[2] + ", " + stuff[1] + ")"
+                }
+    }
+    
     console.log("formattedstuff");
     console.log(formattedstuff);
-    try {
-        if(!['!','?','.'].includes(formattedstuff.charAt(formattedstuff.length-1))) {
-            formattedstuff += "."
-        }
-    } catch {
-        console.log("errored")
-    }
+    
     chrome.storage.local.set({"cardheader":formattedstuff});
     
     document.getElementById("cardhead").innerHTML = formattedstuff;

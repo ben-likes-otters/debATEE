@@ -38,37 +38,69 @@ chrome.tabs.query({active: true, lastFocusedWindow: true}, tabs => {
     //document.getElementById("temp").innerHTML = url;
     
     console.log('carder here');
-    
-    chrome.storage.local.get(["cardheader"]).then((result) => {
-        var formattedstuff = result.cardheader;
-        console.log(formattedstuff)
-        if (!['!','?','.'].includes(formattedstuff.charAt(formattedstuff.length -1))) {
-            formattedstuff += "."
-        }
-        
-        
-        var initials;
-        var formattedcardhead;
-        chrome.storage.local.get(["initials"]).then((result) => {
-            //console.log(result.initials);
-            try {
-                result.initials.toString();
-                initials = result.initials;
-                formattedcardhead1 = formattedstuff + " <em>//" + initials + "</em>";
-                formattedcardhead2 = "<a style=\"color:rgb(40, 84, 197)\" href=\""+url+"\" title=\""+url+"\"><u>"+url.trim()+"</u></a>";
-                
-            } catch {
-                console.log("caught")
-                formattedcardhead1 = formattedstuff;
-                formattedcardhead2 = "<a style=\"color:rgb(40, 84, 197)\" href=\""+url+"\" title=\""+url+"\"><u>"+url.trim()+"</u></a>";
-            }
-            document.getElementById("cardhead1").innerHTML = formattedcardhead1+"\n"+formattedcardhead2;
-            //document.getElementById("cardhead2").innerHTML = formattedcardhead2;
+    chrome.storage.local.get(["headerdata"]).then((result) => {
+        var stuff = result.headerdata;
+        var formattedstuff;
+        chrome.storage.local.get(["usingNS"]).then((result) => {
+            console.log("usingns: "+ result.usingNS)
+            if (result.usingNS) {
+                var initials;
 
+                chrome.storage.local.get(["initials"]).then((result) => {
+                    //console.log(result.initials);
+                    try {
+                        result.initials.toString();
+                        initials = result.initials;
+                        formattedcardhead1 = formattedstuff + " <em>//" + initials + "</em>";
+                        formattedcardhead2 = "<a style=\"color:rgb(40, 84, 197)\" href=\""+url+"\" title=\""+url+"\"><u>"+url.trim()+"</u></a>";
+                        
+                    } catch {
+                        console.log("caught")
+                        formattedcardhead1 = formattedstuff;
+                        formattedcardhead2 = "<a style=\"color:rgb(40, 84, 197)\" href=\""+url+"\" title=\""+url+"\"><u>"+url.trim()+"</u></a>";
+                    }
+                    document.getElementById("cardhead1").innerHTML = formattedcardhead1+"\n"+formattedcardhead2;
+                    //document.getElementById("cardhead2").innerHTML = formattedcardhead2;
+        
+                });
+                
+                var formattedstuff = stuff[0] + ". " + stuff[2] + ". " + stuff[1];
+                try {
+                    if(!['!','?','.'].includes(formattedstuff.charAt(formattedstuff.length-1))) {
+                        formattedstuff += "."
+                    }
+                } catch {
+                    console.log("errored")
+                }
+            
+            } else {
+                if (stuff[0].includes(" ")) {
+                    formattedstuff = "<b style=\"font-family:calibri-bold;\">"+stuff[0].split(" ")[1] +  " " + stuff[2].substring(stuff[2].length-2) + " " + "</b> <span style=\"font-family: calibri; font-size:8pt;\">(" + stuff[0] + ", " + stuff[2] + ", " + stuff[1] + ", "
+                } else {
+                    formattedstuff = "<b style=\"font-family:calibri-bold;\">"+stuff[0] +  " " + stuff[2].substring(stuff[2].length-2) + " " + "</b> <span style=\"font-size:8pt;\">(" + stuff[0] + ", " + stuff[2] + ", " + stuff[1] + ", "
+                }
+                var initials;
+
+                chrome.storage.local.get(["initials"]).then((result) => {
+                    //console.log(result.initials);
+                    try {
+                        result.initials.toString();
+                        initials = result.initials;
+                        formattedcardhead1 = formattedstuff + "<a style=\"color:rgb(40, 84, 197)\" href=\""+url+"\" title=\""+url+"\"><u>"+url.trim()+"</u></a>) " + " <em>//" + initials + "</em></span>";
+                        
+                    } catch {
+                        console.log("caught")
+                        formattedcardhead1 = formattedstuff;
+                        formattedcardhead1 = formattedstuff + "<a style=\"color:rgb(40, 84, 197)\" href=\""+url+"\" title=\""+url+"\"><u>"+url.trim()+"</u></a>)</span> ";
+                    }
+                    document.getElementById("cardhead1").innerHTML = formattedcardhead1;
+                    //document.getElementById("cardhead2").innerHTML = formattedcardhead2;
+        
+                });
+                
+            }
         });
     });
-    
-    
     
     chrome.scripting.executeScript( {
         target: {tabId: tabs[0].id},
