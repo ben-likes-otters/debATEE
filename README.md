@@ -11,3 +11,5 @@ debate [chrome] extension!! made by ben!
 
 ## Download Instructions
 Go to [releases](https://github.com/ben-likes-otters/debATEE/releases) and find the latest release!
+
+OR for an easier download (minus paywall capabilities), visit the [Chrome Web Store page](https://chromewebstore.google.com/detail/debatee/feebnlfdkcmjpjnbjejdehjdglcgcdom)
