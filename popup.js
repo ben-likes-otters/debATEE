@@ -1483,7 +1483,7 @@ async function computeCite(url) {
     var i;
     
     var strPublication;
-    
+    var publisher = "No publisher found";
     var strCite;
     
     var div;
@@ -1687,29 +1687,61 @@ async function computeCite(url) {
         strName = strName.replace(' And ', ' and ');
     }
     
+    //find publisher
+
+    try {
+        let parsedJson = JSON.parse(responsexml.querySelectorAll('script[type="application/ld+json"]')[0].innerHTML)
+        publisher = parsedJson.publisher.name;
+        console.log("publisher: "+publisher)
+    } catch (e) {
+        console.log(e);
+    }
+
     //Find Date
     
     arrDates = responsexml.getElementsByName("date"); //Try date
     if (arrDates.length <= 0) {
         try {
             let parsedJson = JSON.parse(responsexml.querySelectorAll('script[type="application/ld+json"]')[0].innerHTML)
-            
-            for (var i = 0; i<parsedJson.length; i++) {
-                if (parsedJson[i].datePublished){
-                    if (Array.isArray(parsedJson[i].datePublished)){
-                        arrDates = parsedJson[i].datePublished[0]
-                    } else {
-                        arrDates = parsedJson[i].datePublished
-                    }
+            console.log(parsedJson);
+            try {
+                if (Array.isArray(parsedJson.datePublished)) {
+                    arrDates = parsedJson.datePublished[0]
+                } else {
+                    arrDates = parsedJson.datePublished
                 }
 
-                if (Array.isArray(parsedJson[i])){
-                    arrDates = parsedJson[i]
+            } catch {
+                for (var i = 0; i<parsedJson.length && arrDates.length <= 0; i++) {
+                    if (parsedJson[i].datePublished){
+                        if (Array.isArray(parsedJson[i].datePublished)){
+                            arrDates = parsedJson[i].datePublished[0]
+                        } else {
+                            arrDates = parsedJson[i].datePublished
+                        }
+                    }
+    
+                    if (parsedJson[i].dateModified){
+                        if (Array.isArray(parsedJson[i].dateModified)){
+                            arrDates = parsedJson[i].dateModified[0]
+                        } else {
+                            arrDates = parsedJson[i].dateModified
+                        }
+                    }
+    
+                    if (Array.isArray(parsedJson[i])){
+                        arrDates = parsedJson[i]
+                    }
                 }
             }
+            if (arrDates.length <= 0) {
+                console.log("something found")
+            }
+            
         }
         catch(err)
         {
+            arrDates = [];
             console.log(err)
             console.log("continuing")
         }
@@ -1798,6 +1830,13 @@ async function computeCite(url) {
         arrDates_col = responsexml.querySelectorAll("span[property=datePublished]");
         arrDates = Array.prototype.slice.call(arrDates_col);
     }
+
+    if (arrDates.length <= 0) {
+        console.log("finding itemprop datecreated");
+        arrDates_col = responsexml.querySelectorAll("span[itemprop=dateCreated]");
+        arrDates = Array.prototype.slice.call(arrDates_col);
+    }
+    
     if (arrDates.length <= 0) {
         console.log("finding tag time (content)");
         arrDates_tmp = responsexml.getElementsByTagName("time");
@@ -2024,13 +2063,13 @@ async function computeCite(url) {
         strQuals = "";
     }
     if (typeof Month === 'undefined') {
-        Month = "xx";
+        Month = "";
     }
     if (typeof Day === 'undefined') {
-        Day = "xx";
+        Day = "";
     }
     if (typeof Year === 'undefined') {
-        Year = "xxxx";
+        Year = "";
     }
     if (typeof ShortYear === 'undefined') {
         ShortYear = "xx";
@@ -2041,8 +2080,14 @@ async function computeCite(url) {
     
     
     let finaldate = Month + " " + Day + ", " + Year;
-    
-    return [strName, strTitle, finaldate]
+    if (finaldate == " , ") {
+        finaldate = "No date"
+    }
+    if (strTitle.substring(strTitle.length-1) === " ") {
+        strTitle = strTitle.substring(0,strTitle.length-1)
+    }
+    strName = strName.replace("  "," ");
+    return [strName, strTitle, finaldate,publisher]
     
 }
 
@@ -2088,11 +2133,28 @@ async function main() {
         }
     
     } else {
+        var formattedstuff = "";
         if (stuff[0].includes(" ")) {
-                    formattedstuff = stuff[0].split(" ")[1] +  " " + stuff[2].substring(stuff[2].length-2) + " " + "(" + stuff[0] + ", " + stuff[2] + ", " + stuff[1] + ")"
-                } else {
-                    formattedstuff = stuff[0] +  " " + stuff[2].substring(stuff[2].length-2) + " " + "(" + stuff[0] + ", " + stuff[2] + ", " + stuff[1] + ")"
-                }
+            formattedstuff += stuff[0].split(" ")[stuff[0].split(" ").length-1];
+        } else {
+            formattedstuff += stuff[0];
+        }
+        formattedstuff += " ";
+
+        if (!(stuff[2] === "No date")) {
+            formattedstuff += stuff[2].substring(stuff[2].length-2) + " "
+        } else {
+            formattedstuff += " "
+        }
+
+        formattedstuff += "<span style=\"font-size:8pt;\">(" + stuff[0] + ", " + stuff[2] + ", \"" + stuff[1]
+
+        if (stuff[3] === "No publisher found") {
+            formattedstuff += "\")"
+        } else {
+            formattedstuff += "\", " + stuff[3] + ")";
+        }
+        
     }
     
     console.log("formattedstuff");

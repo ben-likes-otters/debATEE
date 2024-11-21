@@ -1,0 +1,2 @@
+1. Remove entire id='paywall' div in debate.html
+2. Delete all functions before 'nth_occurence()' in popup.js (all the archive stuff) and near the end everything that references that

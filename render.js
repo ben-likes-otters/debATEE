@@ -74,11 +74,30 @@ chrome.tabs.query({active: true, lastFocusedWindow: true}, tabs => {
                 }
             
             } else {
+                //console.log(stuff[2]);
+                //console.log(!(stuff[2] === "No date"))
+                var formattedstuff = "";
+
                 if (stuff[0].includes(" ")) {
-                    formattedstuff = "<b style=\"font-family:calibri-bold;\">"+stuff[0].split(" ")[1] +  " " + stuff[2].substring(stuff[2].length-2) + " " + "</b> <span style=\"font-family: calibri; font-size:8pt;\">(" + stuff[0] + ", " + stuff[2] + ", " + stuff[1] + ", "
+                    formattedstuff += "<b style=\"font-family:calibri-bold;\">"+stuff[0].split(" ")[stuff[0].split(" ").length-1] + " "
                 } else {
-                    formattedstuff = "<b style=\"font-family:calibri-bold;\">"+stuff[0] +  " " + stuff[2].substring(stuff[2].length-2) + " " + "</b> <span style=\"font-size:8pt;\">(" + stuff[0] + ", " + stuff[2] + ", " + stuff[1] + ", "
+                    formattedstuff += "<b style=\"font-family:calibri-bold;\">"+stuff[0] +  " "
                 }
+
+                if (!(stuff[2] === "No date")) {
+                    formattedstuff += stuff[2].substring(stuff[2].length-2) + " "
+                } else {
+                    formattedstuff += " "
+                }
+
+                formattedstuff += "</b><span style=\"font-size:8pt; width:350px;\">(" + stuff[0] + ", " + stuff[2] + ", \"" + stuff[1] + "\""
+
+                if (stuff[3] === "No publisher found") {
+                    formattedstuff += ", "
+                } else {
+                    formattedstuff += ", "+stuff[3] + ", "
+                }
+                
                 var initials;
 
                 chrome.storage.local.get(["initials"]).then((result) => {
@@ -107,22 +126,24 @@ chrome.tabs.query({active: true, lastFocusedWindow: true}, tabs => {
         files: ["codeforinject.js"]
     });
     
-    chrome.storage.local.get(["selected", "anchor", "focus","innertext"]).then((result) => {
+    chrome.storage.local.get(["selected", "anchor", "focus","innertext","document"]).then((result) => {
         var alltext = "";//result.innertext
         //var textlist = alltext.split(" ");
-        var page = new XMLHttpRequest();
-        page.open("GET",url,false);
-        page.send(null);
+        //var page = new XMLHttpRequest();
+        //page.open("GET",url,false);
+        //page.send(null);
         const parser = new DOMParser();
-        page = parser.parseFromString(page.responseText,"text/html");
-
+        page = parser.parseFromString(result.document, "text/html");
+        //page = parser.parseFromString(page.responseText,"text/html");
+        //console.log(page);
         var listofptags = page.getElementsByTagName("p");
         for (var i = 0; i < listofptags.length; i++) {
             //console.log(listofptags[i].innerText)
-            alltext += listofptags[i].innerText + "\n\n";
+            alltext += listofptags[i].innerText;
         }
-        //console.log(alltext);
-        
+        alltext.replace("\n","");
+        console.log(alltext);
+
         
         anchor = result.anchor;
         focus = result.focus;
@@ -131,6 +152,7 @@ chrome.tabs.query({active: true, lastFocusedWindow: true}, tabs => {
         end = anchor > focus ? anchor : focus;
 
         if (start - end != 0) {
+            var selected = result.selected.replace("\n","");
             var snippethighlight = result.selected;
             document.getElementById("highlight").style.padding = "1px";
             
@@ -139,8 +161,8 @@ chrome.tabs.query({active: true, lastFocusedWindow: true}, tabs => {
             
             //REDOING W/ OTHER THING
             //console.log(result.selected.replace("\n"," "));
-            start = alltext.indexOf(result.selected);
-            end = start + result.selected.length;
+            start = alltext.indexOf(selected);
+            end = start + selected.length;
             console.log("start: "+start+" end: "+end);
 
             const SLICEAMOUNT = 650;
@@ -181,7 +203,7 @@ chrome.tabs.query({active: true, lastFocusedWindow: true}, tabs => {
                 }
             }
             if (snippetback.charAt(0) == " " && ['.','!','?',')'].includes(snippetback.charAt(1))) {
-                snippetback = snippetback.slice(1,-1)
+                snippetback = snippetback.slice(1,-1);
             }
             //placing spaces cause i cannot look at that
             //snippetfront = snippetfront.replace(":",": ");

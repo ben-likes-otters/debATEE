@@ -17,4 +17,7 @@ chrome.storage.local.set({"innertext": document.body.innerText}).then(() => {
     console.log("Innertext is set");
 });
 
+chrome.storage.local.set({"htmlcode": document}).then(() => {
+    console.log("htmlcode is set");
+});
 
