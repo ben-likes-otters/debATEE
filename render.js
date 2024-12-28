@@ -129,9 +129,7 @@ chrome.tabs.query({active: true, lastFocusedWindow: true}, tabs => {
     chrome.storage.local.get(["selected", "anchor", "focus","innertext","document"]).then((result) => {
         var alltext = "";//result.innertext
         //var textlist = alltext.split(" ");
-        //var page = new XMLHttpRequest();
-        //page.open("GET",url,false);
-        //page.send(null);
+        
         const parser = new DOMParser();
         page = parser.parseFromString(result.document, "text/html");
         //page = parser.parseFromString(page.responseText,"text/html");
@@ -141,28 +139,81 @@ chrome.tabs.query({active: true, lastFocusedWindow: true}, tabs => {
             //console.log(listofptags[i].innerText)
             alltext += listofptags[i].innerText;
         }
-        alltext.replace("\n","");
+        alltext = alltext.replaceAll("\n"," ");
+        alltext = alltext.replaceAll(".",". ");
+        alltext = alltext.replaceAll(" .",".");
+        alltext = alltext.replaceAll("  ", " ");
+        alltext = alltext.replaceAll("U. S. ", "U.S.");
         console.log(alltext);
-
-        
         anchor = result.anchor;
         focus = result.focus;
-        
-        start = anchor < focus ? anchor : focus;
-        end = anchor > focus ? anchor : focus;
+        var start = anchor > focus ? focus : anchor;
+        var end = anchor > focus ? anchor : focus;
 
         if (start - end != 0) {
-            var selected = result.selected.replace("\n","");
+            var selected = result.selected;
+            selected = selected.replaceAll("\n"," ");
+            selected = selected.replaceAll(".",". ");
+            selected = selected.replaceAll(" .",".");
+            selected = selected.replaceAll("  ", " ");
+            selected = selected.replaceAll("U. S. ", "U.S.");
+
             var snippethighlight = result.selected;
             document.getElementById("highlight").style.padding = "1px";
-            
-            slicestart = (start - 200 >= 0) ? start - 200 : 0;
-            sliceend = (end + 200 <= alltext.length - 1) ? end + 200: alltext.length - 1;
             
             //REDOING W/ OTHER THING
             //console.log(result.selected.replace("\n"," "));
             start = alltext.indexOf(selected);
             end = start + selected.length;
+
+            function match_selection() {
+                //Custom search b/c I'm giving up
+
+                listofwords = alltext.split(' ');
+
+                //filter
+                var temp = [];
+                for (var i = 0; i < listofwords.length; i++) {
+                    //console.log(listofwords[i].match("[a-zA-z]+"))
+                    if (listofwords[i].match("[a-zA-z]")) {
+                        temp.push(listofwords[i])
+                    }
+                }
+                listofwords = temp;
+                
+                //redo w/ selected
+                selectedlistwords = selected.split(' ');
+                temp = [];
+                for (var i = 0; i < selectedlistwords.length; i++) {
+                    //console.log(listofwords[i].match("[a-zA-z]+"))
+                    if (selectedlistwords[i].match("[a-zA-z]")) {
+                        temp.push(selectedlistwords[i])
+                    }
+                }
+                selectedlistwords = temp;
+                console.log(listofwords);
+                console.log(selectedlistwords);
+
+                //this will only work if selected words are 'whole' words 
+                //i.e., the splitter detects them *sigh*
+                //that forces this AMAZING bit of code to be a fallback on the orig plan
+
+                //SEARCH
+                for (var i = 0; i < listofwords.length; i++) {
+                    successfulwords = 0;
+                    if (listofwords[i] == selectedlistwords[successfulwords]) {
+                        successfulwords += 1;
+                    } else {
+                        successfulwords = 0;
+                        continue;
+                    }
+                    if (successfulwords == selectedlistwords.length-1) {
+                        //now to somehow return the index of the beginning of those words
+
+                    }
+                }
+            }
+
             console.log("start: "+start+" end: "+end);
 
             const SLICEAMOUNT = 650;
@@ -209,8 +260,9 @@ chrome.tabs.query({active: true, lastFocusedWindow: true}, tabs => {
             //snippetfront = snippetfront.replace(":",": ");
             //snippetback = snippetback.replace(":",": ");
             //snippethighlight = snippethighlight.replace(":",": ");
-            
-            
+            console.log("new snippetfront " + snippetfront)
+            console.log("new snippetback " + snippetback)
+
             document.getElementById("highlight").innerHTML = "<u><b>"+snippethighlight+"</b></u>";
             document.getElementById("topcontext").innerHTML = snippetfront;
             document.getElementById("bottomcontext").innerHTML = snippetback;

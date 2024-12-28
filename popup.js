@@ -1513,6 +1513,23 @@ async function computeCite(url) {
                             arrAuthors = parsedJson.author
                         }
                     }
+                } else {
+                    if (parsedJson["@graph"][0].author) {
+                        if (Array.isArray(parsedJson["@graph"][0].author)){
+                            if (parsedJson["@graph"][0].author[0].name){
+                                arrAuthors = parsedJson["@graph"][0].author[0].name
+                            } else {
+                                arrAuthors = parsedJson["@graph"][0].author[0]
+                            }
+                            
+                        } else {
+                            if (parsedJson["@graph"][0].author.name){ // if not array but if name object exists
+                                arrAuthors = parsedJson["@graph"][0].author.name // sets author name
+                            } else {
+                                arrAuthors = parsedJson["@graph"][0].author
+                            }
+                        }
+                    }
                 }
             }
             catch(err)
@@ -1539,6 +1556,19 @@ async function computeCite(url) {
             arrAuthors = Array.prototype.slice.call(arrAuthors_col);
         }
         if (arrAuthors.length <= 0) {
+            arrAuthors_col = responsexml.getElementsByClassName("article-header-backgrounder__author-link");
+            arrAuthors = Array.prototype.slice.call(arrAuthors_col);
+        }
+        if (arrAuthors.length <= 0) {
+            arrAuthors_col = responsexml.getElementsByClassName("byline__name");
+            arrAuthors = Array.prototype.slice.call(arrAuthors_col);
+        }
+        if (arrAuthors.length <= 0) {
+            arrAuthors_col = responsexml.getElementsByClassName("hero__experts");
+            arrAuthors = Array.prototype.slice.call(arrAuthors_col);
+            console.log(arrAuthors)
+        }
+        if (arrAuthors.length <= 0) {
             for (i = 0; i < arrMeta.length; i++) {
                 if (arrMeta[i].getAttribute("name") == "ces:authors") {
                     strName = arrMeta[i].content;
@@ -1549,15 +1579,24 @@ async function computeCite(url) {
         if (arrAuthors.length > 0) {
             if (Array.isArray(arrAuthors) || NodeList.prototype.isPrototypeOf(arrAuthors)){
                 strName = arrAuthors[0].content;
+                if (typeof strName == 'undefined') {
+                    strName = arrAuthors[0].innerText;
+                }
             } else {
                 strName = arrAuthors
             }
+            if (typeof strName == 'undefined' && typeof arrAuthors[0] == typeof "a") {
+                strName = arrAuthors[0]
+            }
         }
+        console.log("strname")
+        console.log(strName)
     }
     
     //Try to find a div of byline or author class - done separately from regex below for speed, to avoid looping all elements if unnecessary
-    if (typeof strName == 'undefined') {
+    /*if (typeof strName == 'undefined') {
         arrAuthors = responsexml.getElementsByClassName("author");
+        console.log(arrAuthors)
         if (arrAuthors.length <= 0) {
             arrAuthors = responsexml.getElementsByClassName("byline");
         }
@@ -1570,14 +1609,14 @@ async function computeCite(url) {
                 strName = strName.slice(3);
             } //Strip "By" from beginning
         }
-    }
+    }*/
     
     //Try to find any div with "author" or "byline" in part of the id or classname
     if (typeof strName == 'undefined') {
         //Loop all divs and look for a match
         arrDivs = responsexml.getElementsByTagName("div");
         for (i = 0; i < arrDivs.length; i++) {
-            if (arrDivs[i].id.search(/author/i) > -1 || arrDivs[i].className.search(/author/i) > -1 || arrDivs[i].id.search(/byline/i) > -1 || arrDivs[i].className.search(/byline/i) > -1) {
+            if (arrDivs[i].id.search("/author/i") > -1 || arrDivs[i].className.search("/author/i") > -1 || arrDivs[i].id.search("/byline/i") > -1 || arrDivs[i].className.search("/byline/i") > -1) {
                 strName = arrDivs[i].innerText.trim();
                 if (strName.indexOf("\n") > 0) {
                     strName = strName.slice(0, strName.indexOf("\n") + 1);
@@ -1600,7 +1639,7 @@ async function computeCite(url) {
         //Loop all spans and look for a match
         arrSpans = responsexml.getElementsByTagName("span");
         for (i = 0; i < arrSpans.length; i++) {
-            if (arrSpans[i].id.search(/author/i) > -1 || arrSpans[i].className.search(/author/i) > -1 || arrSpans[i].id.search(/byline/i) > -1 || arrSpans[i].className.search(/byline/i) > -1) {
+            if (arrSpans[i].id.search("/author/i") > -1 || arrSpans[i].className.search("/author/i") > -1 || arrSpans[i].id.search("/byline/i") > -1 || arrSpans[i].className.search("/byline/i") > -1) {
                 strName = arrSpans[i].innerText.trim();
                 if (strName.indexOf("\n") > 0) {
                     strName = strName.slice(0, strName.indexOf("\n") + 1);
@@ -1624,7 +1663,7 @@ async function computeCite(url) {
         if (strBodyText.length > 1000) {
             strBodyText = strBodyText.slice(0, 1000);
         } //Slice off after 1000 words to avoid false matches
-        n = strBodyText.search(/\bby \b/i); //Find first occurence of "by "
+        n = strBodyText.search("/\bby \b/i"); //Find first occurence of "by "
         if (n > -1) { //If match found
             strByLine = strBodyText.slice(n); //Slice off everything before "by"
             if (strByLine.indexOf("\n") != -1) {
@@ -1691,51 +1730,75 @@ async function computeCite(url) {
 
     try {
         let parsedJson = JSON.parse(responsexml.querySelectorAll('script[type="application/ld+json"]')[0].innerHTML)
-        publisher = parsedJson.publisher.name;
-        console.log("publisher: "+publisher)
+        if (parsedJson.publisher.name) {
+            publisher = parsedJson.publisher.name;
+            console.log("publisher: "+publisher)
+        } else if (parsedJson["@graph"][0].publisher.name){
+            publisher = parsedJson["@graph"][0].publisher.name;
+            console.log("publisher: "+publisher)
+        }
     } catch (e) {
         console.log(e);
     }
 
     //Find Date
+    function searchParsed(parsedJson) {
+        try {
+            if (Array.isArray(parsedJson.datePublished)) {
+                arrDates = parsedJson.datePublished[0]
+            } else {
+                arrDates = parsedJson.datePublished
+            }
+            
+        } catch {
+            for (var i = 0; i<parsedJson.length && arrDates.length <= 0; i++) {
+                if (parsedJson[i].datePublished){
+                    if (Array.isArray(parsedJson[i].datePublished)){
+                        arrDates = parsedJson[i].datePublished[0]
+                    } else {
+                        arrDates = parsedJson[i].datePublished
+                    }
+                }
     
+                if (parsedJson[i].dateModified){
+                    if (Array.isArray(parsedJson[i].dateModified)){
+                        arrDates = parsedJson[i].dateModified[0]
+                    } else {
+                        arrDates = parsedJson[i].dateModified
+                    }
+                }
+
+                if (Array.isArray(parsedJson[i])){
+                    arrDates = parsedJson[i]
+                }
+            }
+        }
+        return arrDates
+    }
+
     arrDates = responsexml.getElementsByName("date"); //Try date
     if (arrDates.length <= 0) {
         try {
             let parsedJson = JSON.parse(responsexml.querySelectorAll('script[type="application/ld+json"]')[0].innerHTML)
             console.log(parsedJson);
+            console.log(parsedJson["@graph"][0])
+            arrDates = searchParsed(parsedJson);
             try {
-                if (Array.isArray(parsedJson.datePublished)) {
-                    arrDates = parsedJson.datePublished[0]
+                if (arrDates.length <= 0) {
+                    console.log("try parsed w/ @graph")
                 } else {
-                    arrDates = parsedJson.datePublished
+                    arrDates = searchParsed(parsedJson["@graph"][0])
                 }
-
             } catch {
-                for (var i = 0; i<parsedJson.length && arrDates.length <= 0; i++) {
-                    if (parsedJson[i].datePublished){
-                        if (Array.isArray(parsedJson[i].datePublished)){
-                            arrDates = parsedJson[i].datePublished[0]
-                        } else {
-                            arrDates = parsedJson[i].datePublished
-                        }
-                    }
-    
-                    if (parsedJson[i].dateModified){
-                        if (Array.isArray(parsedJson[i].dateModified)){
-                            arrDates = parsedJson[i].dateModified[0]
-                        } else {
-                            arrDates = parsedJson[i].dateModified
-                        }
-                    }
-    
-                    if (Array.isArray(parsedJson[i])){
-                        arrDates = parsedJson[i]
-                    }
-                }
+                console.log("try parsed w/ @graph")
+                arrDates = searchParsed(parsedJson["@graph"][0])
             }
-            if (arrDates.length <= 0) {
-                console.log("something found")
+            try {
+                if (arrDates.length <= 0) {
+                    console.log("something found")
+                }
+            } catch {
+                console.log("nothing found")
             }
             
         }
@@ -1746,98 +1809,98 @@ async function computeCite(url) {
             console.log("continuing")
         }
     }
-
-    if (arrDates.length <= 0) {
+    if (!arrDates || ((Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)) && arrDates.length == 0)) {
         arrDates = responsexml.getElementsByName("Date");
     } //Try Date
     
-    if (arrDates.length <= 0) {
+    if (!arrDates || ((Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)) && arrDates.length == 0)) {
         arrDates = responsexml.getElementsByName("created");
     } //Try created
-    if (arrDates.length <= 0) {
+    if (!arrDates || ((Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)) && arrDates.length == 0)) {
         arrDates = responsexml.getElementsByName("dat");
     } //Try dat
-    if (arrDates.length <= 0) {
+    if (!arrDates || ((Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)) && arrDates.length == 0)) {
         arrDates = responsexml.getElementsByName("DC.date");
     } //Try DC.date
-    if (arrDates.length <= 0) {
+    if (!arrDates || ((Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)) && arrDates.length == 0)) {
+        arrDates = responsexml.getElementsByName("dc.Date");
+    } //Try dc.Date
+    if (!arrDates || ((Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)) && arrDates.length == 0)) {
         console.log("finding dc.date")
 
         arrDates = responsexml.getElementsByName("dc.date");
     } //Try dc.date
-    if (arrDates.length <= 0) {
+    if (!arrDates || ((Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)) && arrDates.length == 0)) {
         arrDates = responsexml.getElementsByName("DC.date.issued");
         console.log("finding dc.date.issued")
 
     } //Try DC.date.issued
-    if (arrDates.length <= 0) {
+    if (!arrDates || ((Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)) && arrDates.length == 0)) {
         arrDates = responsexml.getElementsByName("dc.date.issued");
     } //Try dc.date.issued
-    if (arrDates.length <= 0) {
+    if (!arrDates || ((Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)) && arrDates.length == 0)) {
         console.log("finding dcterms.create")
 
         arrDates = responsexml.getElementsByName("dcterms.created");
     } //Try dcterms.created
-    if (arrDates.length <= 0) {
+    if (!arrDates || ((Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)) && arrDates.length == 0)) {
         console.log("finding dcterms.created")
 
         arrDates = responsexml.getElementsByName("DCterms.created");
     } //Try DCterms.created
-    if (arrDates.length <= 0) {
+    if (!arrDates || ((Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)) && arrDates.length == 0)) {
         console.log("finding dcterms.modified")
 
         arrDates = responsexml.getElementsByName("dcterms.modified");
     } //Try dcterms.modified
-    if (arrDates.length <= 0) {
+    if (!arrDates || ((Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)) && arrDates.length == 0)) {
         console.log("finding dcterms.modified")
 
         arrDates = responsexml.getElementsByName("DCterms.modified");
     } //Try DCterms.modified
-    if (arrDates.length <= 0) {
+    if (!arrDates || ((Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)) && arrDates.length == 0)) {
         console.log("finding sailthru.date")
 
         arrDates = responsexml.getElementsByName("sailthru.date");
     } //Try sailthru.date
-    if (arrDates.length <= 0) {
+    if (!arrDates || ((Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)) && arrDates.length == 0)) {
         console.log("finding fm-vol-iss-date")
 
         arrDates_col = responsexml.getElementsByClassName("fm-vol-iss-date");
         arrDates = Array.prototype.slice.call(arrDates_col);
     }
-    if (arrDates.length <= 0) {
+    if (!arrDates || ((Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)) && arrDates.length == 0)) {
         console.log("finding timestamp")
         arrDates_col = responsexml.getElementsByClassName("timestamp");
         arrDates = Array.prototype.slice.call(arrDates_col);
     }
-    if (arrDates.length <= 0) {
+    if (!arrDates || ((Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)) && arrDates.length == 0)) {
         console.log("finidng revdate")
         arrDates_col = responsexml.getElementsByClassName("revDate");
         arrDates = Array.prototype.slice.call(arrDates_col);
     }
-    if (arrDates.length <= 0) {
+    if (!arrDates || ((Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)) && arrDates.length == 0)) {
         arrDates = responsexml.getElementsByName("citation_date");
     }
-    if (arrDates.length <= 0) {
+    if (!arrDates || ((Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)) && arrDates.length == 0)) {
         arrDates_col = responsexml.getElementsByClassName("epub-date");
         arrDates = Array.prototype.slice.call(arrDates_col);
     }
-    if (arrDates.length <= 0) {
+    if (!arrDates || ((Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)) && arrDates.length == 0)) {
         arrDates_col = responsexml.getElementsByClassName("article-header__date-ttr");
         arrDates = Array.prototype.slice.call(arrDates_col);
     }
-    if (arrDates.length <= 0) {
+    if (!arrDates || ((Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)) && arrDates.length == 0)) {
         console.log("finding property datepublished");
         arrDates_col = responsexml.querySelectorAll("span[property=datePublished]");
         arrDates = Array.prototype.slice.call(arrDates_col);
     }
-
-    if (arrDates.length <= 0) {
+    if (!arrDates || ((Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)) && arrDates.length == 0)) {
         console.log("finding itemprop datecreated");
         arrDates_col = responsexml.querySelectorAll("span[itemprop=dateCreated]");
         arrDates = Array.prototype.slice.call(arrDates_col);
     }
-    
-    if (arrDates.length <= 0) {
+    if (!arrDates || ((Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)) && arrDates.length == 0)) {
         console.log("finding tag time (content)");
         arrDates_tmp = responsexml.getElementsByTagName("time");
         try {
@@ -1856,7 +1919,7 @@ async function computeCite(url) {
             console.log("not found");
         }
     }
-    if (arrDates.length <= 0) {
+    if (!arrDates || ((Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)) && arrDates.length == 0)) {
         console.log("finding tag time (datetime)");
         arrDates_tmp = responsexml.getElementsByTagName("time");
         try {
@@ -1875,96 +1938,105 @@ async function computeCite(url) {
             console.log("not found");
         }
     }
-    
-    if (arrDates.length <= 0) {
+    if (!arrDates || ((Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)) && arrDates.length == 0)) {
         console.log("finding node__published");
         arrDates_col = responsexml.getElementsByClassName("node__published");
         arrDates = Array.prototype.slice.call(arrDates_col);
     }
-    
+    for (i = 0; i < arrMeta.length; i++) {
+        if (arrMeta[i].getAttribute("name") == "dc.Date") {
+            arrDates = [arrMeta[i].content];
+        } //Try dc.Date meta tag
+    }
     //If anything found, assign it to Date
-    if (arrDates.length > 0) {
-        console.log("arrdates:");
-        console.log(arrDates)
-        if (Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)){
-            try {
-                strDate = arrDates[0].content;
-                if (strDate === undefined) {
-                    strDate = arrDates[0].innerText
+    try {
+        if (arrDates.length > 0) {
+            console.log("arrdates:");
+            console.log(arrDates)
+            if (Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)){
+                try {
+                    strDate = arrDates[0].content;
+                    if (strDate === undefined) {
+                        strDate = arrDates[0].innerText
+                    }
+                    if (strDate === undefined) {
+                        strDate = arrDates[0]
+                    }
+                    console.log("strdate: "+strDate)
+                } catch {
+                    console.log("caught")
                 }
-                console.log("strdate: "+strDate)
-            } catch {
-                console.log("catched")
+            } else {
+                strDate = arrDates
             }
         } else {
-            strDate = arrDates
-        }
-    } else {
-        strBodyText = responsexml.body.innerText; //get all text on page
-        if (strBodyText.length > 1500) {
-            strBodyText = strBodyText.slice(0, 1500);
-        } //slice off after 1500 words to avoid false matches and make search faster
-        
-        strDate = strBodyText.match(/\b\d{1,2}\/\d{1,2}\/(\d{2}|\d{4})\b/); //Match m/d/yy to mm/dd/yyyy
-        if (strDate == null) {
-            strDate = strBodyText.match(/\b(1[0-2]|0?[1-9])-(3[01]|[12][0-9]|0?[1-9])-(?:[0-9]{2})?[0-9]{2}\b/);
-        } //same with -
-        if (strDate == null) {
-            strDate = strBodyText.match(/\b(1[0-2]|0?[1-9])\.(3[01]|[12][0-9]|0?[1-9])\.(?:[0-9]{2})?[0-9]{2}\b/);
-        } //same with .
-        if (strDate == null) {
-            strDate = strBodyText.match(/\b(?:(((Jan(uary)?|Ma(r(ch)?|y)|Jul(y)?|Aug(ust)?|Oct(ober)?|Dec(ember)?)\ 31)|((Jan(uary)?|Ma(r(ch)?|y)|Apr(il)?|Ju((ly?)|(ne?))|Aug(ust)?|Oct(ober)?|(Sept|Nov|Dec)(ember)?)\ (0?[1-9]|([12]\d)|30))|(Feb(ruary)?\ (0?[1-9]|1\d|2[0-8]|(29(?=,\ ((1[6-9]|[2-9]\d)(0[48]|[2468][048]|[13579][26])|((16|[2468][048]|[3579][26])00)))))))\,\ ((1[6-9]|[2-9]\d)\d{2}))\b/);
-        } //match full month name
-        if (strDate == null) {
-            strDate = strBodyText.match(/\b(?:(((Jan(uary)?|Ma(r(ch)?|y)|Jul(y)?|Aug(ust)?|Oct(ober)?|Dec(ember)?)\ 31)|((Jan(uary)?|Ma(r(ch)?|y)|Apr(il)?|Ju((ly?)|(ne?))|Aug(ust)?|Oct(ober)?|(Sept|Nov|Dec)(ember)?)\ (0?[1-9]|([12]\d)|30)(st|nd|rd|th))|(Feb(ruary)?\ (0?[1-9]|1\d|2[0-8]|(29(?=,\ ((1[6-9]|[2-9]\d)(0[48]|[2468][048]|[13579][26])|((16|[2468][048]|[3579][26])00)))))(st|nd|rd|th)))\,\ ((1[6-9]|[2-9]\d)\d{2}))\b/);
-        } //match day with st/th/etc
-        if (strDate == null) {
-            strDate = strBodyText.match(/\b(?:(((Jan(uary)?|Ma(r(ch)?|y)|Jul(y)?|Aug(ust)?|Oct(ober)?|Dec(ember)?)(.)?\ 31)|((Jan(uary)?|Ma(r(ch)?|y)|Apr(il)?|Ju((ly?)|(ne?))|Aug(ust)?|Oct(ober)?|(Sept|Nov|Dec)(ember)?)(.)?\ (0?[1-9]|([12]\d)|30))|(Feb(ruary)?(.)?\ (0?[1-9]|1\d|2[0-8]|(29(?=,\ ((1[6-9]|[2-9]\d)(0[48]|[2468][048]|[13579][26])|((16|[2468][048]|[3579][26])00)))))))\,\ ((1[6-9]|[2-9]\d)\d{2}))\b/);
-        } //match month with period
-        if (strDate == null) {
-            strDate = strBodyText.match(/\b((31(?!\ (Feb(ruary)?|Apr(il)?|June?|(Sep(?=\b|t)t?|Nov)(ember)?)))|((30|29)(?!\ Feb(ruary)?))|(29(?=\ Feb(ruary)?\ (((1[6-9]|[2-9]\d)(0[48]|[2468][048]|[13579][26])|((16|[2468][048]|[3579][26])00)))))|(0?[1-9])|1\d|2[0-8])\ (Jan(uary)?|Feb(ruary)?|Ma(r(ch)?|y)|Apr(il)?|Ju((ly?)|(ne?))|Aug(ust)?|Oct(ober)?|(Sep(?=\b|t)t?|Nov|Dec)(ember)?)\ ((1[6-9]|[2-9]\d)\d{2})\b/);
-        } //match dd MMMM yyyy - works to find date but parser sometimes mixes up date/month
-        if (strDate == null) {
-            strDate = strBodyText.match(/\b(?:(((Jan(uary)?|Ma(r(ch)?|y)|Jul(y)?|Aug(ust)?|Oct(ober)?|Dec(ember)?)\ 31)|((Jan(uary)?|Ma(r(ch)?|y)|Apr(il)?|Ju((ly?)|(ne?))|Aug(ust)?|Oct(ober)?|(Sept|Nov|Dec)(ember)?)\ (0?[1-9]|([12]\d)|30))|(Feb(ruary)?\ (0?[1-9]|1\d|2[0-8]|(29(?=,\ ((1[6-9]|[2-9]\d)(0[48]|[2468][048]|[13579][26])|((16|[2468][048]|[3579][26])00)))))))\,\ ((1[6-9]|[2-9]\d)\d{2}))\b/);
-        } //match MMMM dd, yyyy
-        if (strDate == null) {
-            strDate = strBodyText.match(/\b(?:(((JAN(UARY)?|MA(R(CH)?|Y)|JUL(Y)?|AUG(UST)?|OCT(OBER)?|DEC(EMBER)?)\ 31)|((JAN(UARY)?|MA(R(CH)?|Y)|APR(IL)?|JU((LY?)|(NE?))|AUG(UST)?|OCT(OBER)?|(SEPT|NOV|DEC)(EMBER)?)\ (0?[1-9]|([12]\d)|30))|(Feb(ruary)?\ (0?[1-9]|1\d|2[0-8]|(29(?=,\ ((1[6-9]|[2-9]\d)(0[48]|[2468][048]|[13579][26])|((16|[2468][048]|[3579][26])00)))))))\,\ ((1[6-9]|[2-9]\d)\d{2}))\b/);
-        } //same with caps
-        if (strDate == null) {
-            strDate = strBodyText.match(/\b(?:(((Jan(uary)?|Ma(r(ch)?|y)|Jul(y)?|Aug(ust)?|Oct(ober)?|Dec(ember)?)\ 31)|((Jan(uary)?|Ma(r(ch)?|y)|Apr(il)?|Ju((ly?)|(ne?))|Aug(ust)?|Oct(ober)?|(Sept|Nov|Dec)(ember)?)\ (0?[1-9]|([12]\d)|30))|(Feb(ruary)?\ (0?[1-9]|1\d|2[0-8]|(29(?=,\ ((1[6-9]|[2-9]\d)(0[48]|[2468][048]|[13579][26])|((16|[2468][048]|[3579][26])00)))))))\ ((1[6-9]|[2-9]\d)\d{2}))\b/);
-        } //match MMMM dd yyyy
-        if (strDate == null) {
-            strDate = strBodyText.match(/\b(?:(((JAN(UARY)?|MA(R(CH)?|Y)|JUL(Y)?|AUG(UST)?|OCT(OBER)?|DEC(EMBER)?)\ 31)|((JAN(UARY)?|MA(R(CH)?|Y)|APR(IL)?|JU((LY?)|(NE?))|AUG(UST)?|OCT(OBER)?|(SEPT|NOV|DEC)(EMBER)?)\ (0?[1-9]|([12]\d)|30))|(Feb(ruary)?\ (0?[1-9]|1\d|2[0-8]|(29(?=,\ ((1[6-9]|[2-9]\d)(0[48]|[2468][048]|[13579][26])|((16|[2468][048]|[3579][26])00)))))))\ ((1[6-9]|[2-9]\d)\d{2}))\b/);
-        } //same with caps
-        if (strDate == null) {
-            strDate = strBodyText.match(/\b(?:(((Jan(uary)?|Ma(r(ch)?|y)|Jul(y)?|Aug(ust)?|Oct(ober)?|Dec(ember)?)\.\ 31)|((Jan(uary)?|Ma(r(ch)?|y)|Apr(il)?|Ju((ly?)|(ne?))|Aug(ust)?|Oct(ober)?|(Sept|Nov|Dec)(ember)?)\.\ (0?[1-9]|([12]\d)|30))|(Feb(ruary)?\.\ (0?[1-9]|1\d|2[0-8]|(29(?=,\ ((1[6-9]|[2-9]\d)(0[48]|[2468][048]|[13579][26])|((16|[2468][048]|[3579][26])00)))))))\ ((1[6-9]|[2-9]\d)\d{2}))\b/);
-        } //match MMMM. dd yyyy
-        if (strDate == null) {
-            strDate = strBodyText.match(/\b(?:(((JAN(UARY)?|MA(R(CH)?|Y)|JUL(Y)?|AUG(UST)?|OCT(OBER)?|DEC(EMBER)?)\.\ 31)|((JAN(UARY)?|MA(R(CH)?|Y)|APR(IL)?|JU((LY?)|(NE?))|AUG(UST)?|OCT(OBER)?|(SEPT|NOV|DEC)(EMBER)?)\.\ (0?[1-9]|([12]\d)|30))|(Feb(ruary)?\.\ (0?[1-9]|1\d|2[0-8]|(29(?=,\ ((1[6-9]|[2-9]\d)(0[48]|[2468][048]|[13579][26])|((16|[2468][048]|[3579][26])00)))))))\ ((1[6-9]|[2-9]\d)\d{2}))\b/);
-        } //same with caps
-        if (strDate == null) {
-            strDate = strBodyText.match(/\b(?:(((Jan(uary)?|Ma(r(ch)?|y)|Jul(y)?|Aug(ust)?|Oct(ober)?|Dec(ember)?)\.\ 31)|((Jan(uary)?|Ma(r(ch)?|y)|Apr(il)?|Ju((ly?)|(ne?))|Aug(ust)?|Oct(ober)?|(Sept|Nov|Dec)(ember)?)\.\ (0?[1-9]|([12]\d)|30))|(Feb(ruary)?\.\ (0?[1-9]|1\d|2[0-8]|(29(?=,\ ((1[6-9]|[2-9]\d)(0[48]|[2468][048]|[13579][26])|((16|[2468][048]|[3579][26])00)))))))\,\ ((1[6-9]|[2-9]\d)\d{2}))\b/);
-        } //match MMMM. dd, yyyy
-        if (strDate == null) {
-            strDate = strBodyText.match(/\b(?:(((JAN(UARY)?|MA(R(CH)?|Y)|JUL(Y)?|AUG(UST)?|OCT(OBER)?|DEC(EMBER)?)\.\ 31)|((JAN(UARY)?|MA(R(CH)?|Y)|APR(IL)?|JU((LY?)|(NE?))|AUG(UST)?|OCT(OBER)?|(SEPT|NOV|DEC)(EMBER)?)\.\ (0?[1-9]|([12]\d)|30))|(Feb(ruary)?\.\ (0?[1-9]|1\d|2[0-8]|(29(?=,\ ((1[6-9]|[2-9]\d)(0[48]|[2468][048]|[13579][26])|((16|[2468][048]|[3579][26])00)))))))\,\ ((1[6-9]|[2-9]\d)\d{2}))\b/);
-        } //same with caps
-        
-        if (strDate != null) {
-            strDate = strDate[0];
-        } //Select only first match from regex result array
-        
-        if (arrDates.length <= 0 && strDate == null) { //If no date tags, loop meta tags instead
-            for (i = 0; i < arrMeta.length; i++) {
-                //console.log(arrMeta[i])
-                try {
-                    if ((arrMeta[i].getAttribute("property").includes("time") || arrMeta[i].getAttribute("property").includes("date")) && arrMeta[i].getAttribute("property").includes("published")) {
-                        strDate = arrMeta[i].content;
-                    } //Find time or date in property attributes
-                } catch {
-                    continue
+            strBodyText = responsexml.body.innerText; //get all text on page
+            if (strBodyText.length > 1500) {
+                strBodyText = strBodyText.slice(0, 1500);
+            } //slice off after 1500 words to avoid false matches and make search faster
+            
+            strDate = strBodyText.match(/\b\d{1,2}\/\d{1,2}\/(\d{2}|\d{4})\b/); //Match m/d/yy to mm/dd/yyyy
+            if (strDate == null) {
+                strDate = strBodyText.match(/\b(1[0-2]|0?[1-9])-(3[01]|[12][0-9]|0?[1-9])-(?:[0-9]{2})?[0-9]{2}\b/);
+            } //same with -
+            if (strDate == null) {
+                strDate = strBodyText.match(/\b(1[0-2]|0?[1-9])\.(3[01]|[12][0-9]|0?[1-9])\.(?:[0-9]{2})?[0-9]{2}\b/);
+            } //same with .
+            if (strDate == null) {
+                strDate = strBodyText.match(/\b(?:(((Jan(uary)?|Ma(r(ch)?|y)|Jul(y)?|Aug(ust)?|Oct(ober)?|Dec(ember)?)\ 31)|((Jan(uary)?|Ma(r(ch)?|y)|Apr(il)?|Ju((ly?)|(ne?))|Aug(ust)?|Oct(ober)?|(Sept|Nov|Dec)(ember)?)\ (0?[1-9]|([12]\d)|30))|(Feb(ruary)?\ (0?[1-9]|1\d|2[0-8]|(29(?=,\ ((1[6-9]|[2-9]\d)(0[48]|[2468][048]|[13579][26])|((16|[2468][048]|[3579][26])00)))))))\,\ ((1[6-9]|[2-9]\d)\d{2}))\b/);
+            } //match full month name
+            if (strDate == null) {
+                strDate = strBodyText.match(/\b(?:(((Jan(uary)?|Ma(r(ch)?|y)|Jul(y)?|Aug(ust)?|Oct(ober)?|Dec(ember)?)\ 31)|((Jan(uary)?|Ma(r(ch)?|y)|Apr(il)?|Ju((ly?)|(ne?))|Aug(ust)?|Oct(ober)?|(Sept|Nov|Dec)(ember)?)\ (0?[1-9]|([12]\d)|30)(st|nd|rd|th))|(Feb(ruary)?\ (0?[1-9]|1\d|2[0-8]|(29(?=,\ ((1[6-9]|[2-9]\d)(0[48]|[2468][048]|[13579][26])|((16|[2468][048]|[3579][26])00)))))(st|nd|rd|th)))\,\ ((1[6-9]|[2-9]\d)\d{2}))\b/);
+            } //match day with st/th/etc
+            if (strDate == null) {
+                strDate = strBodyText.match(/\b(?:(((Jan(uary)?|Ma(r(ch)?|y)|Jul(y)?|Aug(ust)?|Oct(ober)?|Dec(ember)?)(.)?\ 31)|((Jan(uary)?|Ma(r(ch)?|y)|Apr(il)?|Ju((ly?)|(ne?))|Aug(ust)?|Oct(ober)?|(Sept|Nov|Dec)(ember)?)(.)?\ (0?[1-9]|([12]\d)|30))|(Feb(ruary)?(.)?\ (0?[1-9]|1\d|2[0-8]|(29(?=,\ ((1[6-9]|[2-9]\d)(0[48]|[2468][048]|[13579][26])|((16|[2468][048]|[3579][26])00)))))))\,\ ((1[6-9]|[2-9]\d)\d{2}))\b/);
+            } //match month with period
+            if (strDate == null) {
+                strDate = strBodyText.match(/\b((31(?!\ (Feb(ruary)?|Apr(il)?|June?|(Sep(?=\b|t)t?|Nov)(ember)?)))|((30|29)(?!\ Feb(ruary)?))|(29(?=\ Feb(ruary)?\ (((1[6-9]|[2-9]\d)(0[48]|[2468][048]|[13579][26])|((16|[2468][048]|[3579][26])00)))))|(0?[1-9])|1\d|2[0-8])\ (Jan(uary)?|Feb(ruary)?|Ma(r(ch)?|y)|Apr(il)?|Ju((ly?)|(ne?))|Aug(ust)?|Oct(ober)?|(Sep(?=\b|t)t?|Nov|Dec)(ember)?)\ ((1[6-9]|[2-9]\d)\d{2})\b/);
+            } //match dd MMMM yyyy - works to find date but parser sometimes mixes up date/month
+            if (strDate == null) {
+                strDate = strBodyText.match(/\b(?:(((Jan(uary)?|Ma(r(ch)?|y)|Jul(y)?|Aug(ust)?|Oct(ober)?|Dec(ember)?)\ 31)|((Jan(uary)?|Ma(r(ch)?|y)|Apr(il)?|Ju((ly?)|(ne?))|Aug(ust)?|Oct(ober)?|(Sept|Nov|Dec)(ember)?)\ (0?[1-9]|([12]\d)|30))|(Feb(ruary)?\ (0?[1-9]|1\d|2[0-8]|(29(?=,\ ((1[6-9]|[2-9]\d)(0[48]|[2468][048]|[13579][26])|((16|[2468][048]|[3579][26])00)))))))\,\ ((1[6-9]|[2-9]\d)\d{2}))\b/);
+            } //match MMMM dd, yyyy
+            if (strDate == null) {
+                strDate = strBodyText.match(/\b(?:(((JAN(UARY)?|MA(R(CH)?|Y)|JUL(Y)?|AUG(UST)?|OCT(OBER)?|DEC(EMBER)?)\ 31)|((JAN(UARY)?|MA(R(CH)?|Y)|APR(IL)?|JU((LY?)|(NE?))|AUG(UST)?|OCT(OBER)?|(SEPT|NOV|DEC)(EMBER)?)\ (0?[1-9]|([12]\d)|30))|(Feb(ruary)?\ (0?[1-9]|1\d|2[0-8]|(29(?=,\ ((1[6-9]|[2-9]\d)(0[48]|[2468][048]|[13579][26])|((16|[2468][048]|[3579][26])00)))))))\,\ ((1[6-9]|[2-9]\d)\d{2}))\b/);
+            } //same with caps
+            if (strDate == null) {
+                strDate = strBodyText.match(/\b(?:(((Jan(uary)?|Ma(r(ch)?|y)|Jul(y)?|Aug(ust)?|Oct(ober)?|Dec(ember)?)\ 31)|((Jan(uary)?|Ma(r(ch)?|y)|Apr(il)?|Ju((ly?)|(ne?))|Aug(ust)?|Oct(ober)?|(Sept|Nov|Dec)(ember)?)\ (0?[1-9]|([12]\d)|30))|(Feb(ruary)?\ (0?[1-9]|1\d|2[0-8]|(29(?=,\ ((1[6-9]|[2-9]\d)(0[48]|[2468][048]|[13579][26])|((16|[2468][048]|[3579][26])00)))))))\ ((1[6-9]|[2-9]\d)\d{2}))\b/);
+            } //match MMMM dd yyyy
+            if (strDate == null) {
+                strDate = strBodyText.match(/\b(?:(((JAN(UARY)?|MA(R(CH)?|Y)|JUL(Y)?|AUG(UST)?|OCT(OBER)?|DEC(EMBER)?)\ 31)|((JAN(UARY)?|MA(R(CH)?|Y)|APR(IL)?|JU((LY?)|(NE?))|AUG(UST)?|OCT(OBER)?|(SEPT|NOV|DEC)(EMBER)?)\ (0?[1-9]|([12]\d)|30))|(Feb(ruary)?\ (0?[1-9]|1\d|2[0-8]|(29(?=,\ ((1[6-9]|[2-9]\d)(0[48]|[2468][048]|[13579][26])|((16|[2468][048]|[3579][26])00)))))))\ ((1[6-9]|[2-9]\d)\d{2}))\b/);
+            } //same with caps
+            if (strDate == null) {
+                strDate = strBodyText.match(/\b(?:(((Jan(uary)?|Ma(r(ch)?|y)|Jul(y)?|Aug(ust)?|Oct(ober)?|Dec(ember)?)\.\ 31)|((Jan(uary)?|Ma(r(ch)?|y)|Apr(il)?|Ju((ly?)|(ne?))|Aug(ust)?|Oct(ober)?|(Sept|Nov|Dec)(ember)?)\.\ (0?[1-9]|([12]\d)|30))|(Feb(ruary)?\.\ (0?[1-9]|1\d|2[0-8]|(29(?=,\ ((1[6-9]|[2-9]\d)(0[48]|[2468][048]|[13579][26])|((16|[2468][048]|[3579][26])00)))))))\ ((1[6-9]|[2-9]\d)\d{2}))\b/);
+            } //match MMMM. dd yyyy
+            if (strDate == null) {
+                strDate = strBodyText.match(/\b(?:(((JAN(UARY)?|MA(R(CH)?|Y)|JUL(Y)?|AUG(UST)?|OCT(OBER)?|DEC(EMBER)?)\.\ 31)|((JAN(UARY)?|MA(R(CH)?|Y)|APR(IL)?|JU((LY?)|(NE?))|AUG(UST)?|OCT(OBER)?|(SEPT|NOV|DEC)(EMBER)?)\.\ (0?[1-9]|([12]\d)|30))|(Feb(ruary)?\.\ (0?[1-9]|1\d|2[0-8]|(29(?=,\ ((1[6-9]|[2-9]\d)(0[48]|[2468][048]|[13579][26])|((16|[2468][048]|[3579][26])00)))))))\ ((1[6-9]|[2-9]\d)\d{2}))\b/);
+            } //same with caps
+            if (strDate == null) {
+                strDate = strBodyText.match(/\b(?:(((Jan(uary)?|Ma(r(ch)?|y)|Jul(y)?|Aug(ust)?|Oct(ober)?|Dec(ember)?)\.\ 31)|((Jan(uary)?|Ma(r(ch)?|y)|Apr(il)?|Ju((ly?)|(ne?))|Aug(ust)?|Oct(ober)?|(Sept|Nov|Dec)(ember)?)\.\ (0?[1-9]|([12]\d)|30))|(Feb(ruary)?\.\ (0?[1-9]|1\d|2[0-8]|(29(?=,\ ((1[6-9]|[2-9]\d)(0[48]|[2468][048]|[13579][26])|((16|[2468][048]|[3579][26])00)))))))\,\ ((1[6-9]|[2-9]\d)\d{2}))\b/);
+            } //match MMMM. dd, yyyy
+            if (strDate == null) {
+                strDate = strBodyText.match(/\b(?:(((JAN(UARY)?|MA(R(CH)?|Y)|JUL(Y)?|AUG(UST)?|OCT(OBER)?|DEC(EMBER)?)\.\ 31)|((JAN(UARY)?|MA(R(CH)?|Y)|APR(IL)?|JU((LY?)|(NE?))|AUG(UST)?|OCT(OBER)?|(SEPT|NOV|DEC)(EMBER)?)\.\ (0?[1-9]|([12]\d)|30))|(Feb(ruary)?\.\ (0?[1-9]|1\d|2[0-8]|(29(?=,\ ((1[6-9]|[2-9]\d)(0[48]|[2468][048]|[13579][26])|((16|[2468][048]|[3579][26])00)))))))\,\ ((1[6-9]|[2-9]\d)\d{2}))\b/);
+            } //same with caps
+            
+            if (strDate != null) {
+                strDate = strDate[0];
+            } //Select only first match from regex result array
+            if (arrDates.length <= 0 && strDate == null) { //If no date tags, loop meta tags instead
+                for (i = 0; i < arrMeta.length; i++) {
+                    //console.log(arrMeta[i])
+                    try {
+                        if ((arrMeta[i].getAttribute("property").includes("time") || arrMeta[i].getAttribute("property").includes("date")) && arrMeta[i].getAttribute("property").includes("published")) {
+                            strDate = arrMeta[i].content;
+                        } //Find time or date in property attributes
+                    } catch {
+                        continue
+                    }
                 }
             }
         }
+    } catch {
+        pass;
     }
     console.log("arrdates: ");
     console.log(arrDates);
@@ -2074,6 +2146,10 @@ async function computeCite(url) {
     
     arrTitles = responsexml.getElementsByName("og:title"); //Try og:title
     if (arrTitles.length <= 0) {
+        console.log('title');
+        arrTitles = responsexml.getElementsByName("title");
+    } //Try title
+    if (arrTitles.length <= 0) {
         console.log('dctitle');
         arrTitles = responsexml.getElementsByName("DC.title");
     } //Try DC.title
@@ -2087,6 +2163,7 @@ async function computeCite(url) {
             //console.log(i)
             if (arrMeta[i].getAttribute("property") == "og:title") {
                 strTitle = arrMeta[i].content;
+                console.log(strTitle)
             } //Find og:title in property attributes
         }
     }
