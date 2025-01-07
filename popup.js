@@ -1556,6 +1556,10 @@ async function computeCite(url) {
             arrAuthors = Array.prototype.slice.call(arrAuthors_col);
         }
         if (arrAuthors.length <= 0) {
+            arrAuthors_col = responsexml.getElementsByClassName("author");
+            arrAuthors = Array.prototype.slice.call(arrAuthors_col);
+        }
+        if (arrAuthors.length <= 0) {
             arrAuthors_col = responsexml.getElementsByClassName("article-header-backgrounder__author-link");
             arrAuthors = Array.prototype.slice.call(arrAuthors_col);
         }
@@ -1565,6 +1569,11 @@ async function computeCite(url) {
         }
         if (arrAuthors.length <= 0) {
             arrAuthors_col = responsexml.getElementsByClassName("hero__experts");
+            arrAuthors = Array.prototype.slice.call(arrAuthors_col);
+            console.log(arrAuthors)
+        }
+        if (arrAuthors.length <= 0) {
+            arrAuthors_col = responsexml.getElementsByClassName("fes-article-authors");
             arrAuthors = Array.prototype.slice.call(arrAuthors_col);
             console.log(arrAuthors)
         }
@@ -1591,6 +1600,7 @@ async function computeCite(url) {
         }
         console.log("strname")
         console.log(strName)
+        console.log(arrAuthors)
     }
     
     //Try to find a div of byline or author class - done separately from regex below for speed, to avoid looping all elements if unnecessary
@@ -1948,6 +1958,11 @@ async function computeCite(url) {
             arrDates = [arrMeta[i].content];
         } //Try dc.Date meta tag
     }
+    for (i = 0; i < arrMeta.length; i++) {
+        if (arrMeta[i].getAttribute("property") == "og:updated_time") {
+            arrDates = [arrMeta[i].content];
+        } //Try og:updated time meta tag
+    }
     //If anything found, assign it to Date
     try {
         if (arrDates.length > 0) {
@@ -2047,11 +2062,18 @@ async function computeCite(url) {
             strDate = strDate.slice(0, 10);
         }
         strDate = strDate.toLowerCase()
-        strDate = strDate.replace("published","");
-        strDate = strDate.replace("online", "");
-        strDate = strDate.replace(".","");
-        strDate = strDate.replace("on","");
-        strDate = strDate.replace("updated","");
+        strDate = strDate.replaceAll("published","");
+        strDate = strDate.replaceAll("online", "");
+        strDate = strDate.replaceAll(".","");
+        strDate = strDate.replaceAll("mon","");
+        strDate = strDate.replaceAll("tue","");
+        strDate = strDate.replaceAll("wed","");
+        strDate = strDate.replaceAll("thu","");
+        strDate = strDate.replaceAll("fri","");
+        strDate = strDate.replaceAll("sat","");
+        strDate = strDate.replaceAll("sun","");
+        strDate = strDate.replaceAll("on","");
+        strDate = strDate.replaceAll("updated","");
         console.log(strDate);
         
         d = Date.parse(strDate);

@@ -233,18 +233,19 @@ chrome.tabs.query({active: true, lastFocusedWindow: true}, tabs => {
             console.log(sliceend);
             
             var snippetfront = alltext.slice(slicestart,start);
-            var snippetback = alltext.slice(end, sliceend);
+            var snippetback = alltext.slice(end-1, sliceend);
             console.log("initial snippetfront: "+snippetfront);
             console.log("initial snippetback: "+snippetback);
 
             for (let i = slicestart-1; i>=0; i--) {
                 if (['.','!','?'].includes(alltext.charAt(i))) {
-                    snippetfront = snippetfront.slice(1,-1);
+                    //snippetfront = snippetfront.slice(1,-1);
                     break;
                 } else {
                     snippetfront = alltext.charAt(i) + snippetfront;
                 }
             }
+            console.log("done"+snippetfront)
             for (let i = sliceend; i<=alltext.length - 1; i++) {
                 if (['.','!','?'].includes(alltext.charAt(i))) {
                     snippetback += alltext.charAt(i)
@@ -255,6 +256,7 @@ chrome.tabs.query({active: true, lastFocusedWindow: true}, tabs => {
             }
             if (snippetback.charAt(0) == " " && ['.','!','?',')'].includes(snippetback.charAt(1))) {
                 snippetback = snippetback.slice(1,-1);
+                console.log('sliced')
             }
             //placing spaces cause i cannot look at that
             //snippetfront = snippetfront.replace(":",": ");
@@ -262,6 +264,11 @@ chrome.tabs.query({active: true, lastFocusedWindow: true}, tabs => {
             //snippethighlight = snippethighlight.replace(":",": ");
             console.log("new snippetfront " + snippetfront)
             console.log("new snippetback " + snippetback)
+
+            if (start == -1) {
+                snippetfront = "";
+                snippetback = "";
+            }
 
             document.getElementById("highlight").innerHTML = "<u><b>"+snippethighlight+"</b></u>";
             document.getElementById("topcontext").innerHTML = snippetfront;
