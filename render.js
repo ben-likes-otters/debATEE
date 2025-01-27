@@ -43,6 +43,12 @@ chrome.tabs.query({active: true, lastFocusedWindow: true}, tabs => {
         var formattedstuff;
         chrome.storage.local.get(["usingNS"]).then((result) => {
             console.log("usingns: "+ result.usingNS)
+
+            //DOA STUFF
+            var tempDate = new Date();
+            var DOAstr = "DOA:" + tempDate.getDate().toString().padStart(2, '0') + "-" + (tempDate.getMonth()+1).toString() + "-" + tempDate.getFullYear().toString();
+            console.log(DOAstr);
+
             if (result.usingNS) {
                 var initials;
 
@@ -63,8 +69,8 @@ chrome.tabs.query({active: true, lastFocusedWindow: true}, tabs => {
                     //document.getElementById("cardhead2").innerHTML = formattedcardhead2;
         
                 });
-                
-                var formattedstuff = stuff[0] + ". " + stuff[2] + ". " + stuff[1];
+
+                var formattedstuff = stuff[0] + ". " + stuff[2] + ". " + stuff[1] + ". "+ DOAstr;
                 try {
                     if(!['!','?','.'].includes(formattedstuff.charAt(formattedstuff.length-1))) {
                         formattedstuff += "."
@@ -98,6 +104,8 @@ chrome.tabs.query({active: true, lastFocusedWindow: true}, tabs => {
                     formattedstuff += ", "+stuff[3] + ", "
                 }
                 
+                formattedstuff += DOAstr + ", "
+
                 var initials;
 
                 chrome.storage.local.get(["initials"]).then((result) => {

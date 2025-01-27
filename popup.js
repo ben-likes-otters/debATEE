@@ -1,163 +1,3 @@
-async function updatedarchiveph(url) {
-    console.log("bonjour")
-
-    try {
-        var responsetext = await fetch("https://archive.ph/"+url).then((response) => {
-            return response.text();
-        });
-        
-        if (responsetext.includes(">No results<")) {
-            newresponsetext = await fetch("https://corsproxy.io/?https://archive.ph/?url="+url).then((response) => {
-                return response.text();
-            });
-            
-            //console.log(newresponsetext);
-            var submitid = newresponsetext;
-            submitid = submitid.slice(submitid.indexOf("type=\"hidden\""));
-            //console.log(submitid);
-            submitid = submitid.slice(submitid.indexOf("value="));
-            submitid = submitid.slice(submitid.indexOf("\"")+1);
-            submitid = submitid.slice(0, submitid.indexOf("\""));
-            //console.log(submitid);
-            submitid = encodeURIComponent(submitid);
-            return "https://archive.ph/submit/?submitid="+submitid+"&url="+url;
-        } else {
-            //console.log(xmlHttp.responseText)
-            var righturl = responsetext;
-            //console.log(responsetext)
-            righturl = righturl.slice(righturl.indexOf("TEXT-BLOCK"))
-            righturl = righturl.slice(righturl.indexOf("archive.ph"))
-            righturl = righturl.slice(0,righturl.indexOf("\""))
-            //console.log("line 31"+righturl)
-            return "https://"+righturl
-        }
-    } catch (error) {
-        console.error("caught\n"+error)
-        return "https://archive.ph/"+url
-    }
-}
-
-async function updatedarchiveis(url) {
-    console.log("bonjour")
-
-    try {
-        var responsetext = await fetch("https://archive.is/"+url).then((response) => {
-            return response.text();
-        });
-        
-        if (responsetext.includes(">No results<")) {
-            newresponsetext = await fetch("https://corsproxy.io/?https://archive.is/?url="+url).then((response) => {
-                return response.text();
-            });
-            
-            //console.log(newresponsetext);
-            var submitid = newresponsetext;
-            submitid = submitid.slice(submitid.indexOf("type=\"hidden\""));
-            //console.log(submitid);
-            submitid = submitid.slice(submitid.indexOf("value="));
-            submitid = submitid.slice(submitid.indexOf("\"")+1);
-            submitid = submitid.slice(0, submitid.indexOf("\""));
-            //console.log(submitid);
-            submitid = encodeURIComponent(submitid);
-            return "https://archive.is/submit/?submitid="+submitid+"&url="+url;
-        } else {
-            //console.log(xmlHttp.responseText)
-            var righturl = responsetext;
-            //console.log(responsetext)
-            righturl = righturl.slice(righturl.indexOf("TEXT-BLOCK"))
-            righturl = righturl.slice(righturl.indexOf("archive.is"))
-            righturl = righturl.slice(0,righturl.indexOf("\""))
-            //console.log("line 31"+righturl)
-            return "https://"+righturl
-        }
-    } catch (error) {
-        console.error("caught\n"+error)
-        return "https://archive.is/"+url
-    }
-}
-
-
-function getfinalarchiveph(url) {
-    /*fetch('https://corsproxy.io/?https://archive.ph/'+url,).then(r => r.text()).then(result => {
-        // Result now contains the response text, do what you want...
-        console.log(result);
-    })*/
-    try {
-        var xmlHttp = new XMLHttpRequest();
-        xmlHttp.open("GET", "https://archive.ph/"+url, false); // false for synchronous request
-        xmlHttp.timeout = 2000;
-        xmlHttp.send(null);
-        
-        if (xmlHttp.responseText.includes(">No results<")) {
-            xmlHttp.open("GET", "https://corsproxy.io/?https://archive.ph/?url="+url, false);
-            xmlHttp.timeout = 2000;
-            xmlHttp.send(null);
-            //console.log(xmlHttp.responseText);
-            var submitid = xmlHttp.responseText;
-            submitid = submitid.slice(submitid.indexOf("type=\"hidden\""))
-            console.log(submitid)
-            submitid = submitid.slice(submitid.indexOf("value="))
-            submitid = submitid.slice(submitid.indexOf("\"")+1)
-            submitid = submitid.slice(0, submitid.indexOf("\""))
-            console.log(submitid)
-            submitid = encodeURIComponent(submitid);
-            return "https://archive.ph/submit/?submitid="+submitid+"&url="+url
-        } else {
-            //console.log(xmlHttp.responseText)
-            var righturl = xmlHttp.responseText;
-            //console.log(responsetext)
-            righturl = righturl.slice(righturl.indexOf("TEXT-BLOCK"))
-            righturl = righturl.slice(righturl.indexOf("archive.ph"))
-            righturl = righturl.slice(0,righturl.indexOf("\""))
-            console.log(righturl)
-            return "https://"+righturl
-        }
-    } catch (error) {
-        console.log("caught\n"+error)
-        return "https://archive.ph/"+url
-    }
-}
-
-function getfinalarchiveis(url) {
-    try {
-        var xmlHttp = new XMLHttpRequest();
-        xmlHttp.open("GET", "https://archive.is/"+url, false); // false for synchronous request
-        xmlHttp.timeout = 2000;
-
-        xmlHttp.send(null);
-        
-        if (xmlHttp.responseText.includes(">No results<")) {
-            xmlHttp.open("GET", "https://corsproxy.io/?https://archive.is/?url="+url, false);
-            xmlHttp.timeout = 2000;
-            xmlHttp.send(null);
-            //console.log(xmlHttp.responseText);
-            var submitid = xmlHttp.responseText;
-            submitid = submitid.slice(submitid.indexOf("type=\"hidden\""))
-            console.log(submitid)
-            submitid = submitid.slice(submitid.indexOf("value="))
-            submitid = submitid.slice(submitid.indexOf("\"")+1)
-            submitid = submitid.slice(0, submitid.indexOf("\""))
-            console.log(submitid)
-            submitid = encodeURIComponent(submitid);
-            return "https://archive.is/submit/?submitid="+submitid+"&url="+url
-        } else {
-            //console.log(xmlHttp.responseText)
-            var righturl = xmlHttp.responseText;
-            //console.log(responsetext)
-            righturl = righturl.slice(righturl.indexOf("TEXT-BLOCK"))
-            righturl = righturl.slice(righturl.indexOf("archive.is"))
-            righturl = righturl.slice(0,righturl.indexOf("\""))
-            console.log(righturl)
-            return "https://"+righturl
-        }
-    } catch {
-        return "https://archive.is/"+url
-    }
-}
-
-function getfinal12ftio(url) {
-    return "https://12ft.io/"+url
-}
 function nth_occurrence(string, char, nth) {
     var first_index = string.indexOf(char);
     var length_up_to_first_index = first_index + 1;
@@ -1556,6 +1396,10 @@ async function computeCite(url) {
             arrAuthors = Array.prototype.slice.call(arrAuthors_col);
         }
         if (arrAuthors.length <= 0) {
+            arrAuthors_col = responsexml.getElementsByClassName("article-byline");
+            arrAuthors = Array.prototype.slice.call(arrAuthors_col);
+        }
+        if (arrAuthors.length <= 0) {
             arrAuthors_col = responsexml.getElementsByClassName("author");
             arrAuthors = Array.prototype.slice.call(arrAuthors_col);
         }
@@ -2344,26 +2188,6 @@ async function main() {
         target: {tabId: tabs[0].id},
         files: ["codeforinject.js"]
     });
-    
-    updatedarchiveph(url).then((archiveph_url) => {
-        document.getElementById("archiveph").setAttribute("href", archiveph_url);
-        document.getElementById("archiveph").setAttribute("title", archiveph_url);
-        console.log("archiveph: "+archiveph_url);
-        if (archiveph_url == "https://archive.ph" || archiveph_url == "https://") {        document.getElementById("errorplace").setAttribute("style", "color:red;font-size: 10px;");
-        }
-    });
-    
-    updatedarchiveis(url).then((archiveis_url) => {
-        document.getElementById("archiveis").setAttribute("href", archiveis_url);
-        document.getElementById("archiveis").setAttribute("title", archiveis_url);
-    });
-
-    var twelveftio_url = getfinal12ftio(url);
-    console.log(document.getElementById("archiveph"))
-    
-    document.getElementById("12ftio").setAttribute("href", twelveftio_url);
-    document.getElementById("12ftio").setAttribute("title", twelveftio_url);
-    
     console.log('here');
 }
 
