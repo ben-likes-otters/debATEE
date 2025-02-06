@@ -30,6 +30,50 @@ document.getElementById("copier").addEventListener("mouseover",copierborderadd);
 document.getElementById("copier").addEventListener("mouseout",copierborderdel);
 document.getElementById("copier").addEventListener("mouseup",copierfilterdel);
 
+function clearHighlight() {
+    console.log("run clearhighlight")
+    chrome.storage.local.get(["highlightsCleared","color"]).then((result) => {
+        var cleared = result.highlightsCleared;
+        if (!cleared) {
+            console.log('clearing')
+            document.getElementById("highlight").style.fontFamily = 'calibri';
+            document.getElementById("highlight").style.backgroundColor = '';
+            document.getElementById("highlight").style.fontSize = '8pt';
+            temphtml = document.getElementById("highlight").innerHTML;
+            console.log(temphtml);
+            while (temphtml.substring(0,6) == "<u><b>") {
+                temphtml = temphtml.substring(6,temphtml.length-8);
+                console.log(temphtml);
+                document.getElementById("highlight").innerHTML = temphtml;
+            }
+            chrome.storage.local.set({"highlightsCleared":true});
+        } else {
+            console.log('adding')
+            document.getElementById("highlight").style.fontFamily = 'calibri-bold';
+            //color
+            document.getElementById("highlight").style.backgroundColor = 'rgb(0,255,0)';
+            try {
+                var strcolor = result.color.toString() //just in case
+                rgblist = strcolor.replace(/[^\d,]/g, '').split(',');
+                document.getElementById("highlight").style.backgroundColor = "rgb("+strcolor+")"; //rgblist[0],rgblist[1],rgblist[2])
+                
+            } catch {
+                console.log("no color set");
+            }
+
+            document.getElementById("highlight").style.fontSize = '11pt';
+            temphtml = document.getElementById("highlight").innerHTML;
+            console.log(temphtml);
+            document.getElementById("highlight").innerHTML = "<u><b>"+temphtml+"</u></b>";
+            chrome.storage.local.set({"highlightsCleared":false});
+        }
+    });
+}
+
+
+document.getElementById("clearHighlight").addEventListener('click', function() {
+    clearHighlight();
+});
 
 
 chrome.tabs.query({active: true, lastFocusedWindow: true}, tabs => {
@@ -280,7 +324,7 @@ chrome.tabs.query({active: true, lastFocusedWindow: true}, tabs => {
 
             document.getElementById("highlight").innerHTML = "<u><b>"+snippethighlight+"</b></u>";
             document.getElementById("topcontext").innerHTML = snippetfront;
-            document.getElementById("bottomcontext").innerHTML = snippetback;
+            document.getElementById("bottomcontext").innerHTML = snippetback.substring(1);
             
             chrome.storage.local.get(["color"]).then((result) => {
                 try {
