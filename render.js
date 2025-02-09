@@ -92,9 +92,41 @@ chrome.tabs.query({active: true, lastFocusedWindow: true}, tabs => {
             var tempDate = new Date();
             var DOAstr = "DOA:" + tempDate.getDate().toString().padStart(2, '0') + "-" + (tempDate.getMonth()+1).toString() + "-" + tempDate.getFullYear().toString();
             console.log(DOAstr);
+            if (stuff[0] == "No Author" && stuff[3] != "") { //set publisher name to author if no author found
+                stuff[0] = stuff[3]
+            }
 
             if (result.usingNS) {
                 var initials;
+
+                if (stuff[0] != "No Author") {
+                    var formattedstuff = stuff[0].split(" ")[0] + " <b style=\"font-family:calibri-bold;\">"+stuff[0].split(" ")[1] + "</b>";
+                } else {
+                    var formattedstuff = stuff[0]
+                }
+
+                if (stuff[4] == "") {
+                    formattedstuff += ". ";
+                } else {
+                    formattedstuff += "<span style=\"font-size:8pt;\">["+stuff[0] + stuff[4] + "]</span>. ";
+                }
+
+                if (stuff[2].split(",").length > 1) {
+                    formattedstuff += stuff[2].split(",")[0]+ "<b style=\"font-family:calibri-bold;\">"+stuff[2].split(",")[1] + "</b>. " + stuff[1] + ". "+ DOAstr;
+                } else {
+                    formattedstuff += stuff[2] + ". " + stuff[1] + ". "+ DOAstr;
+                }
+                
+                
+                
+                try {
+                    if(!['!','?','.'].includes(formattedstuff.charAt(formattedstuff.length-1))) {
+                        formattedstuff += "."
+                    }
+                } catch {
+                    console.log("errored")
+                }
+                
 
                 chrome.storage.local.get(["initials"]).then((result) => {
                     //console.log(result.initials);
@@ -113,16 +145,6 @@ chrome.tabs.query({active: true, lastFocusedWindow: true}, tabs => {
                     //document.getElementById("cardhead2").innerHTML = formattedcardhead2;
         
                 });
-
-                var formattedstuff = stuff[0] + ". " + stuff[2] + ". " + stuff[1] + ". "+ DOAstr;
-                try {
-                    if(!['!','?','.'].includes(formattedstuff.charAt(formattedstuff.length-1))) {
-                        formattedstuff += "."
-                    }
-                } catch {
-                    console.log("errored")
-                }
-            
             } else {
                 //console.log(stuff[2]);
                 //console.log(!(stuff[2] === "No date"))
@@ -140,9 +162,9 @@ chrome.tabs.query({active: true, lastFocusedWindow: true}, tabs => {
                     formattedstuff += " "
                 }
 
-                formattedstuff += "</b><span style=\"font-size:8pt; width:350px;\">(" + stuff[0] + ", " + stuff[2] + ", \"" + stuff[1] + "\""
+                formattedstuff += "</b><span style=\"font-size:8pt; width:350px;\">(" + stuff[0] + stuff[4] + ", " + stuff[2] + ", \"" + stuff[1] + "\""
 
-                if (stuff[3] === "No publisher found") {
+                if (stuff[3] == "") {
                     formattedstuff += ", "
                 } else {
                     formattedstuff += ", "+stuff[3] + ", "

@@ -1,6 +1,4 @@
 async function updatedarchiveph(url) {
-    console.log("bonjour")
-
     try {
         var responsetext = await fetch("https://archive.ph/"+url).then((response) => {
             return response.text();
@@ -38,8 +36,6 @@ async function updatedarchiveph(url) {
 }
 
 async function updatedarchiveis(url) {
-    console.log("bonjour")
-
     try {
         var responsetext = await fetch("https://archive.is/"+url).then((response) => {
             return response.text();
@@ -1440,13 +1436,9 @@ async function computeCite(url) {
             console.log("responsexml 1359"+responsexml.substring(0,100));
         });*/
                                                                             
-    console.log(responsexml.document);
         
     
     responsexml = parser.parseFromString(responsexml.document,"text/html");
-    
-    console.log("responsexml 1367");
-    console.log(responsexml);
 
     
     /*fetch("https://corsproxy.io/?"+encodeURIComponent(url)).then((response) => {
@@ -1463,14 +1455,12 @@ async function computeCite(url) {
     var arrMeta;
     var arrAuthors;
     var arrTitles;
-    var arrPublications;
     
     var strName;
     var strBodyText;
     var strByLine;
     var n;
     
-    var strQuals;
     
     var arrDates;
     var strDate;
@@ -1483,11 +1473,8 @@ async function computeCite(url) {
     var strTitle;
     var i;
     
-    var strPublication;
-    var publisher = "No publisher found";
-    var strCite;
+    var publisher = "";
     
-    var div;
     //Load all Meta tags for use later
     arrMeta = responsexml.getElementsByTagName("meta");
     
@@ -1553,10 +1540,6 @@ async function computeCite(url) {
         if (arrAuthors.length <= 0) {arrAuthors = responsexml.getElementsByName("dc.Creator")}
         if (arrAuthors.length <= 0) {arrAuthors = responsexml.getElementsByName("Dc.Creator")} //Try DC.creator
         if (arrAuthors.length <= 0) {
-            arrAuthors_col = responsexml.getElementsByClassName("authors");
-            arrAuthors = Array.prototype.slice.call(arrAuthors_col);
-        }
-        if (arrAuthors.length <= 0) {
             arrAuthors_col = responsexml.getElementsByClassName("article-byline");
             arrAuthors = Array.prototype.slice.call(arrAuthors_col);
         }
@@ -1575,17 +1558,22 @@ async function computeCite(url) {
         if (arrAuthors.length <= 0) {
             arrAuthors_col = responsexml.getElementsByClassName("hero__experts");
             arrAuthors = Array.prototype.slice.call(arrAuthors_col);
-            console.log(arrAuthors)
         }
         if (arrAuthors.length <= 0) {
             arrAuthors_col = responsexml.getElementsByClassName("fes-article-authors");
             arrAuthors = Array.prototype.slice.call(arrAuthors_col);
-            console.log(arrAuthors)
         }
         if (arrAuthors.length <= 0) {
             arrAuthors_col = responsexml.getElementsByClassName("authorName");
             arrAuthors = Array.prototype.slice.call(arrAuthors_col);
-            console.log(arrAuthors)
+        }
+        if (arrAuthors.length <= 0) {
+            arrAuthors_col = responsexml.getElementsByClassName("article-authors");
+            arrAuthors = Array.prototype.slice.call(arrAuthors_col);
+        }
+        if (arrAuthors.length <= 0) {
+            arrAuthors_col = responsexml.getElementsByClassName("authors");
+            arrAuthors = Array.prototype.slice.call(arrAuthors_col);
         }
         if (arrAuthors.length <= 0) {
             for (i = 0; i < arrMeta.length; i++) {
@@ -1608,28 +1596,8 @@ async function computeCite(url) {
                 strName = arrAuthors[0]
             }
         }
-        console.log("strname")
-        console.log(strName)
-        console.log(arrAuthors)
     }
-    
-    //Try to find a div of byline or author class - done separately from regex below for speed, to avoid looping all elements if unnecessary
-    /*if (typeof strName == 'undefined') {
-        arrAuthors = responsexml.getElementsByClassName("author");
-        console.log(arrAuthors)
-        if (arrAuthors.length <= 0) {
-            arrAuthors = responsexml.getElementsByClassName("byline");
-        }
-        if (arrAuthors.length > 0) {
-            strName = arrAuthors[0].innerText.trim(); //If anything found, assign Name the innerText
-            if (strName.indexOf("\n") != -1) {
-                strName = strName.slice(0, strName.indexOf("\n") + 1);
-            } //Slice end if there's a newline
-            if (strName.substring(0, 3) == "By " || strName.substring(0, 3) == "by " || strName.substring(0, 3) == "BY ") {
-                strName = strName.slice(3);
-            } //Strip "By" from beginning
-        }
-    }*/
+    strName = strName.trim()
     
     //Try to find any div with "author" or "byline" in part of the id or classname
     if (typeof strName == 'undefined') {
@@ -1698,18 +1666,17 @@ async function computeCite(url) {
             strName = strByLine.slice(3); //slice off "By "
         }
     }
-    
     //Clean up Name if found
-    if (typeof strName != 'undefined') {
+    if (typeof strName !== "undefined") {
         //Strip "By" from beginning if it made it through
-        if (strName.substring(0, 3) == "By " || strName.substring(0, 3) == "by " || strName.substring(0, 3) == "BY ") {
+        if (strName.startsWith("By") || strName.startsWith("by") || strName.startsWith("BY")) {
             strName = strName.slice(3);
         }
         //Strip "The" and "www." from beginning
-        if (strName.substring(0, 4) == "The " || strName.substring(0, 4) == "the " || strName.substring(0, 4) == "THE ") {
+        if (strName.startsWith("The") || strName.startsWith("the") || strName.startsWith("THE")) {
             strName = strName.slice(4);
         }
-        if (strName.substring(0, 4) == "www." || strName.substring(0, 4) == "Www." || strName.substring(0, 4) == "WWW.") {
+        if (strName.startsWith("www.") || strName.startsWith("Www.") || strName.startsWith("WWW.")) {
             strName = strName.slice(4);
         }
         //Strip .Com from end
@@ -1741,25 +1708,58 @@ async function computeCite(url) {
         } //Slice off trailing -
         
         //Make Name title case
-        strName = toTitleCase(strName)
-        .trim();
+        strName = toTitleCase(strName).trim();
         strName = strName.replace(' And ', ' and ');
     }
     
+
+
+
+
     //find publisher
 
-    try {
+    try { //meant to catch no application/ld+json
         let parsedJson = JSON.parse(responsexml.querySelectorAll('script[type="application/ld+json"]')[0].innerHTML)
-        if (parsedJson.publisher.name) {
-            publisher = parsedJson.publisher.name;
-            console.log("publisher: "+publisher)
-        } else if (parsedJson["@graph"][0].publisher.name){
-            publisher = parsedJson["@graph"][0].publisher.name;
-            console.log("publisher: "+publisher)
+        try { //meant to catch no .publisher
+            if (parsedJson.publisher) {
+                if (parsedJson.publisher.name) {
+                    publisher = parsedJson.publisher.name;
+                    console.log("publisher: "+publisher)
+                } else if (parsedJson["@graph"][0].publisher.name){
+                    publisher = parsedJson["@graph"][0].publisher.name;
+                    console.log("publisher: "+publisher)
+                }
+            }
+        } catch {
+            if (parsedJson.publisher[0]) {
+                if (parsedJson.publisher[0].name) {
+                    publisher = parsedJson.publisher[0].name;
+                    console.log("publisher: "+publisher)
+                } else if (parsedJson["@graph"][0].publisher[0].name){
+                    publisher = parsedJson["@graph"][0].publisher[0].name;
+                    console.log("publisher: "+publisher)
+                }
+            }
+        }
+        
+        
+
+        //metas
+        for (i = 0; i < arrMeta.length; i++) {
+            if (arrMeta[i].getAttribute("property") == "og:site_name") {
+                publisher = [arrMeta[i].content];
+            } //Try og:site_name meta tag
+        }
+
+        if (Array.isArray(publisher) || NodeList.prototype.isPrototypeOf(publisher)) {
+            publisher = publisher[0];
         }
     } catch (e) {
         console.log(e);
     }
+
+
+
 
     //Find Date
     function searchParsed(parsedJson) {
@@ -1800,8 +1800,6 @@ async function computeCite(url) {
     if (arrDates.length <= 0) {
         try {
             let parsedJson = JSON.parse(responsexml.querySelectorAll('script[type="application/ld+json"]')[0].innerHTML)
-            console.log(parsedJson);
-            console.log(parsedJson["@graph"][0])
             arrDates = searchParsed(parsedJson);
             try {
                 if (arrDates.length <= 0) {
@@ -1826,7 +1824,6 @@ async function computeCite(url) {
         {
             arrDates = [];
             console.log(err)
-            console.log("continuing")
         }
     }
     if (!arrDates || ((Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)) && arrDates.length == 0)) {
@@ -1846,61 +1843,42 @@ async function computeCite(url) {
         arrDates = responsexml.getElementsByName("dc.Date");
     } //Try dc.Date
     if (!arrDates || ((Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)) && arrDates.length == 0)) {
-        console.log("finding dc.date")
-
         arrDates = responsexml.getElementsByName("dc.date");
     } //Try dc.date
     if (!arrDates || ((Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)) && arrDates.length == 0)) {
         arrDates = responsexml.getElementsByName("DC.date.issued");
-        console.log("finding dc.date.issued")
-
     } //Try DC.date.issued
     if (!arrDates || ((Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)) && arrDates.length == 0)) {
         arrDates = responsexml.getElementsByName("dc.date.issued");
     } //Try dc.date.issued
     if (!arrDates || ((Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)) && arrDates.length == 0)) {
-        console.log("finding dcterms.create")
-
         arrDates = responsexml.getElementsByName("dcterms.created");
     } //Try dcterms.created
     if (!arrDates || ((Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)) && arrDates.length == 0)) {
-        console.log("finding dcterms.created")
-
         arrDates = responsexml.getElementsByName("DCterms.created");
     } //Try DCterms.created
     if (!arrDates || ((Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)) && arrDates.length == 0)) {
-        console.log("finding dcterms.modified")
-
         arrDates = responsexml.getElementsByName("dcterms.modified");
     } //Try dcterms.modified
     if (!arrDates || ((Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)) && arrDates.length == 0)) {
-        console.log("finding dcterms.modified")
-
         arrDates = responsexml.getElementsByName("DCterms.modified");
     } //Try DCterms.modified
     if (!arrDates || ((Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)) && arrDates.length == 0)) {
-        console.log("finding sailthru.date")
-
         arrDates = responsexml.getElementsByName("sailthru.date");
     } //Try sailthru.date
     if (!arrDates || ((Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)) && arrDates.length == 0)) {
-        console.log("finding fm-vol-iss-date")
-
         arrDates_col = responsexml.getElementsByClassName("fm-vol-iss-date");
         arrDates = Array.prototype.slice.call(arrDates_col);
     }
     if (!arrDates || ((Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)) && arrDates.length == 0)) {
-        console.log("finding timestamp")
         arrDates_col = responsexml.getElementsByClassName("timestamp");
         arrDates = Array.prototype.slice.call(arrDates_col);
     }
     if (!arrDates || ((Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)) && arrDates.length == 0)) {
-        console.log("finding revdate")
         arrDates_col = responsexml.getElementsByClassName("revDate");
         arrDates = Array.prototype.slice.call(arrDates_col);
     }
     if (!arrDates || ((Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)) && arrDates.length == 0)) {
-        console.log("finding authorDate")
         arrDates_col = responsexml.getElementsByClassName("authorDate");
         arrDates = Array.prototype.slice.call(arrDates_col);
     }
@@ -1916,17 +1894,18 @@ async function computeCite(url) {
         arrDates = Array.prototype.slice.call(arrDates_col);
     }
     if (!arrDates || ((Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)) && arrDates.length == 0)) {
-        console.log("finding property datepublished");
         arrDates_col = responsexml.querySelectorAll("span[property=datePublished]");
         arrDates = Array.prototype.slice.call(arrDates_col);
     }
     if (!arrDates || ((Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)) && arrDates.length == 0)) {
-        console.log("finding itemprop datecreated");
         arrDates_col = responsexml.querySelectorAll("span[itemprop=dateCreated]");
         arrDates = Array.prototype.slice.call(arrDates_col);
     }
     if (!arrDates || ((Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)) && arrDates.length == 0)) {
-        console.log("finding tag time (content)");
+        arrDates_col = responsexml.getElementsByClassName("article-published-date");
+        arrDates = Array.prototype.slice.call(arrDates_col);
+    }
+    if (!arrDates || ((Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)) && arrDates.length == 0)) {
         arrDates_tmp = responsexml.getElementsByTagName("time");
         try {
             for (var i = 0; i < arrDates_tmp.length; i++) {
@@ -1945,7 +1924,6 @@ async function computeCite(url) {
         }
     }
     if (!arrDates || ((Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)) && arrDates.length == 0)) {
-        console.log("finding tag time (datetime)");
         arrDates_tmp = responsexml.getElementsByTagName("time");
         try {
             for (var i = 0; i < arrDates_tmp.length; i++) {
@@ -1964,7 +1942,6 @@ async function computeCite(url) {
         }
     }
     if (!arrDates || ((Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)) && arrDates.length == 0)) {
-        console.log("finding node__published");
         arrDates_col = responsexml.getElementsByClassName("node__published");
         arrDates = Array.prototype.slice.call(arrDates_col);
     }
@@ -1981,8 +1958,6 @@ async function computeCite(url) {
     //If anything found, assign it to Date
     try {
         if (arrDates.length > 0) {
-            console.log("arrdates:");
-            console.log(arrDates)
             if (Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)){
                 try {
                     strDate = arrDates[0].content;
@@ -2068,8 +2043,6 @@ async function computeCite(url) {
     } catch {
         pass;
     }
-    console.log("arrdates: ");
-    console.log(arrDates);
     //Convert date with parser
     if (strDate != null && typeof strDate != 'undefined') {
         //Clean up date if it has a combined date/time code that breaks parser
@@ -2089,7 +2062,6 @@ async function computeCite(url) {
         strDate = strDate.replaceAll("sun","");
         strDate = strDate.replaceAll("on","");
         strDate = strDate.replaceAll("updated","");
-        console.log(strDate);
         
         d = Date.parse(strDate);
         if (!(d != null && d != "Invalid Date")) {
@@ -2150,7 +2122,6 @@ async function computeCite(url) {
             d = Date.parse(strDate);
 
             if (!(d != null && d != "Invalid Date")) { //last ditch
-                console.log("last ditch "+strBodyText)
                 d = Date.parse(strBodyText)
             }
         }
@@ -2183,24 +2154,19 @@ async function computeCite(url) {
     
     arrTitles = responsexml.getElementsByName("og:title"); //Try og:title
     if (arrTitles.length <= 0) {
-        console.log('title');
         arrTitles = responsexml.getElementsByName("title");
     } //Try title
     if (arrTitles.length <= 0) {
-        console.log('dctitle');
         arrTitles = responsexml.getElementsByName("DC.title");
     } //Try DC.title
     if (arrTitles.length <= 0) {
-        console.log('headline');
         arrTitles = responsexml.getElementsByName("headline");
     } //Try headline
     if (arrTitles.length <= 0) { //If no name tags, loop meta tags instead
-        console.log('metas');
         for (i = 0; i < arrMeta.length; i++) {
             //console.log(i)
             if (arrMeta[i].getAttribute("property") == "og:title") {
                 strTitle = arrMeta[i].content;
-                console.log(strTitle)
             } //Find og:title in property attributes
         }
     }
@@ -2239,9 +2205,7 @@ async function computeCite(url) {
     if (typeof strName === 'undefined') {
         strName = "No Author";
     }
-    if (typeof strQuals === 'undefined') {
-        strQuals = "";
-    }
+    
     if (typeof Month === 'undefined') {
         Month = "";
     }
@@ -2256,6 +2220,9 @@ async function computeCite(url) {
     }
     if (typeof strTitle === 'undefined') {
         strTitle = document.title;
+    }
+    if (strName.trim() == "") {
+        strName = "No Author";
     }
 
     //One more trap for dates
@@ -2279,8 +2246,159 @@ async function computeCite(url) {
         strTitle = strTitle.substring(0,strTitle.length-1)
     }
     strName = strName.replace("  "," ");
-    return [strName, strTitle, finaldate ,publisher]
     
+    //AUTHOR QUALS
+    var aqs = "";
+    if (strName != "No Author") {
+        //search for classes
+        var arrAqs_col;
+        var arrAqs;
+
+        //NLM_bio -- T&F style
+        arrAqs_col = responsexml.getElementsByClassName("NLM_bio");
+        arrAqs = Array.prototype.slice.call(arrAqs_col);
+
+        
+        //attempt to go through links
+        //how am i even meant to program this
+        
+        var arrLinks_col;
+        var arrLinks;
+        var link_end;
+
+        function extract_href(link) { //accepts strings
+            var temp = link.substring(link.indexOf("href=")+6)
+            temp = temp.substring(0,temp.indexOf("\""))
+            return temp;
+        }
+        var tabs = await chrome.tabs.query({active: true, lastFocusedWindow: true});
+        var origurl = tabs[0].url;
+        //parsing to leave only domain (for later appending of new links)
+
+        //get rid of https:// OR http:// should work in either case
+        origurl = origurl.substring(origurl.indexOf("//")+2)
+        var link_beginning = origurl.split('/')[0]; //everything before the first /!!
+
+        //CFR
+        arrLinks_col = responsexml.getElementsByClassName("article-header__link");
+        arrLinks = Array.prototype.slice.call(arrLinks_col);
+        if (typeof arrLinks[0] !== "undefined") {
+            console.log("searching link");
+            link_end = extract_href(arrLinks[0].outerHTML); //get outerHTML to convert to string
+            link = "https://" + link_beginning + link_end;
+            //get bio
+            response = await fetch(link);
+            html = await response.text();
+            const parser = new DOMParser();
+            var doc = parser.parseFromString(html,"text/html");
+            console.log(doc);
+            aqs = doc.getElementsByClassName("expert-bio__main-body")[0].innerText;
+            console.log(aqs);
+        }
+
+        //CNN
+        if (!arrLinks || ((Array.isArray(arrLinks) || NodeList.prototype.isPrototypeOf(arrLinks)) && arrLinks.length == 0)) {
+            arrLinks_col = responsexml.getElementsByClassName("byline__link");
+            arrLinks = Array.prototype.slice.call(arrLinks_col);
+            if (typeof arrLinks[0] !== "undefined") {
+                if (arrLinks[0].toString().startsWith("chrome")) {
+                    link_end = extract_href(arrLinks[0].outerHTML); //get outerHTML to convert to string
+                    link = "https://" + link_beginning + link_end;
+                } else {
+                    link = arrLinks[0].toString();
+                }
+                //get bio
+                response = await fetch(link);
+                html = await response.text();
+                const parser = new DOMParser();
+                var doc = parser.parseFromString(html,"text/html");
+                aqs = doc.getElementsByClassName("profile__short-bio")[0].innerText;
+            }
+        }
+
+        //Guardian + testing getting every href
+        /*if (!arrLinks || ((Array.isArray(arrLinks) || NodeList.prototype.isPrototypeOf(arrLinks)) && arrLinks.length == 0)) {
+            arrLinks_col = responsexml.querySelectorAll("a");
+            arrLinks = Array.prototype.slice.call(arrLinks_col);
+            tempArr = [];
+            for (let i=0;i<arrLinks.length;i++) {
+                if (arrLinks[i].getAttribute("href").includes("profile")) {
+                    tempArr.push(arrLinks[i].getAttribute("href"))
+                }
+            }
+            arrLinks = tempArr;
+            console.log(arrLinks);
+        }*/
+
+
+        if (!aqs || typeof aqs === "undefined") {
+            aqs = arrAqs[0];
+        }
+        if (typeof aqs != typeof "hi") {
+            try {
+                aqs = aqs.innerText;
+            } catch (e) {
+                console.log(e);
+            }
+        }
+
+        if (aqs == "" || typeof aqs === "undefined") { //last resor
+            var strBodyText = responsexml.body.innerText;
+            aqs = ""
+            //look for author + is
+            let searchStr = strName + " is ";
+            addindex = strBodyText.indexOf(searchStr);
+
+            if (addindex != -1) { //found
+                while (strBodyText.charAt(addindex) != ".") {
+                    aqs += strBodyText.charAt(addindex);
+                    addindex ++;
+                }
+            }
+
+            //simpler ver + v last resort
+
+            if (publisher != "" && (aqs == "" || typeof aqs === "undefined")) {
+                aqs = " writes at " + publisher
+            }
+        }
+
+        //error trap
+        if (typeof aqs === "undefined" || aqs.trim() == "") {
+            aqs = ", no qualifications found"
+        }
+
+        //strip author name
+        while (aqs.startsWith(strName)) {
+            aqs = " " + aqs.substring(strName.length).trim();
+        }
+        //slice first two sentences 
+        if (aqs.split(".").length >= 2) {
+            aqs = aqs.split(".")[0] + ". " + aqs.split(".")[1];
+        }
+
+        //random small fixes
+        if (aqs.endsWith("Read Full Bio")) { //cnn
+            aqs = " " + aqs.substring(0,aqs.length-13).trim();
+        }
+
+        //strip punctuation
+        if (aqs.endsWith(".")) {
+            aqs = aqs.substring(0,aqs.length-1)
+        }
+        if (aqs.endsWith("!")) {
+            aqs = aqs.substring(0,aqs.length-1)
+        }
+        if (aqs.endsWith("?")) {
+            aqs = aqs.substring(0,aqs.length-1)
+        }
+        aqs = aqs.replaceAll("U.S.","US")
+        if (!aqs.startsWith(',')) {
+            aqs = " " + aqs.trim();
+        }
+    }
+    
+    return [strName, strTitle, finaldate, publisher, aqs]
 }
 
 //result = computeCite()
@@ -2300,7 +2418,21 @@ function toTitleCase(str) {
 
 
 async function main() {
-    
+    //SET DEFAULTS
+    var tester = chrome.storage.local.get();
+    try {
+        tester.usingNS;
+    } catch {
+        chrome.storage.local.set({"usingNS":false});
+    }
+    try {
+        tester.color;
+    } catch {
+        chrome.storage.local.set({"color":"0,255,0"});
+    }
+
+
+
     let tabs = await chrome.tabs.query({active: true, lastFocusedWindow: true});
     url = tabs[0].url
 
@@ -2341,7 +2473,7 @@ async function main() {
 
         formattedstuff += "<span style=\"font-size:8pt;\">(" + stuff[0] + ", " + stuff[2] + ", \"" + stuff[1]
 
-        if (stuff[3] === "No publisher found") {
+        if (stuff[3] === "") {
             formattedstuff += "\")"
         } else {
             formattedstuff += "\", " + stuff[3] + ")";
@@ -2361,12 +2493,28 @@ async function main() {
     });
     
     chrome.storage.local.set({"highlightsCleared":false});
+    
+    //change feature button
+    function changeFeature() {
+        document.getElementById("feature").style.color = "rgb(0, 135, 255)";
+        document.getElementById("feature").innerText = "NEW FEATURES";
+    }
+    var tempversion = await chrome.storage.local.get("version")
+    version = tempversion.version
+    if (typeof version !== "undefined") {
+        if (version != chrome.runtime.getManifest().version.toString()) {
+            changeFeature();
+        }
+    } else { //update feature button -- version is set on the features page
+        console.log("didnt get version")
+        changeFeature();
+    }
 
     updatedarchiveph(url).then((archiveph_url) => {
         document.getElementById("archiveph").setAttribute("href", archiveph_url);
         document.getElementById("archiveph").setAttribute("title", archiveph_url);
-        console.log("archiveph: "+archiveph_url);
-        if (archiveph_url == "https://archive.ph" || archiveph_url == "https://") {        document.getElementById("errorplace").setAttribute("style", "color:red;font-size: 10px;");
+        if (archiveph_url == "https://archive.ph" || archiveph_url == "https://") {
+            document.getElementById("errorplace").setAttribute("style", "color:red;font-size: 10px;");
         }
     });
     
@@ -2376,12 +2524,9 @@ async function main() {
     });
 
     var twelveftio_url = getfinal12ftio(url);
-    console.log(document.getElementById("archiveph"))
     
     document.getElementById("12ftio").setAttribute("href", twelveftio_url);
     document.getElementById("12ftio").setAttribute("title", twelveftio_url);
-    
-    console.log('here');
 }
 
 main();

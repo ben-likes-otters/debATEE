@@ -29,6 +29,26 @@
                 font-size: 20px;
                 margin: 10px;
             }
+            .overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+                z-index: 100; /* Ensure it stays on top */
+                /*display: none; /* Initially hidden */
+            }
+            .dialog-container {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background-color: white;
+                padding: 20px;
+                border-radius: 5px;
+                z-index: 101; /* Slightly higher than the overlay */
+            }
         </style>
         
     </head>
@@ -55,10 +75,9 @@
         </div>
         <br>
         <div id="footer">
-            <a style="font-size: 15px; color:white; text-align: center; " href="settings.html">Settings</a>
-            <!--<a href="settings.html" ><img src="icons/settings.png" style="float:right; filter:invert(1); margin-bottom:10px;" width="20" height="20" ></img></a>-->
+            <a style="font-size: 15px; color:white; text-align: center; display:inline; margin-right:5px;" href="settings.html">Settings</a>
+
+            <a style="font-size: 15px; color:white; text-align: center; display:inline; margin-left:5px;" href="features.html" id="feature">Feature List</a>
         </div>
-        
     </body>
-    
 </html>

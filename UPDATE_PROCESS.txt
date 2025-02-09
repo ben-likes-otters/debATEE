@@ -1,0 +1,6 @@
+Update the features page
+Update manifest
+Push to GitHub
+Compress extension folder
+Make copy of (original) folder
+Follow CHANGES.txt -> upload to CWS
