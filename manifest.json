@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "DebATEE",
   "description": "All purpose debate extension!",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "action": {
     "default_popup": "debate.html",
     "default_icon": "icons/smallicon.png"

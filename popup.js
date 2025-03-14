@@ -1576,12 +1576,37 @@ async function computeCite(url) {
             arrAuthors = Array.prototype.slice.call(arrAuthors_col);
         }
         if (arrAuthors.length <= 0) {
+            arrAuthors_col = responsexml.getElementsByClassName("node-article-field-byline");
+            arrAuthors = Array.prototype.slice.call(arrAuthors_col);
+        }
+        if (arrAuthors.length <= 0) {
             for (i = 0; i < arrMeta.length; i++) {
                 if (arrMeta[i].getAttribute("name") == "ces:authors") {
-                    strName = arrMeta[i].content;
+                    arrAuthors = [arrMeta[i].content];
                 } //Try ces:authors meta tag
             }
         }
+        if (arrAuthors.length <= 0) {
+            for (i = 0; i < arrMeta.length; i++) {
+                if (arrMeta[i].getAttribute("name") == "citation_author") {
+                    arrAuthors = [arrMeta[i].content];
+                    if (typeof arrAuthors[0] !== "undefined") {
+                        break;
+                    }
+                } //Try ces:authors meta tag
+            }
+        }
+        if (arrAuthors.length <= 0) {
+            for (i = 0; i < arrMeta.length; i++) {
+                if (arrMeta[i].getAttribute("property") == "article:author") {
+                    arrAuthors = [arrMeta[i].content];
+                    if (typeof arrAuthors[0] !== "undefined") {
+                        break;
+                    }
+                } //Try article:author meta tag
+            }
+        }
+
         //If anything found, assign the first hit to Name
         if (arrAuthors.length > 0) {
             if (Array.isArray(arrAuthors) || NodeList.prototype.isPrototypeOf(arrAuthors)){
@@ -1597,10 +1622,14 @@ async function computeCite(url) {
             }
         }
     }
-    strName = strName.trim()
+    if (typeof strName !== "undefined") {
+        try {
+            strName = strName.trim()
+        } catch{}
+    }
     
     //Try to find any div with "author" or "byline" in part of the id or classname
-    if (typeof strName == 'undefined') {
+    if (typeof strName === "undefined") {
         //Loop all divs and look for a match
         arrDivs = responsexml.getElementsByTagName("div");
         for (i = 0; i < arrDivs.length; i++) {
@@ -1760,31 +1789,37 @@ async function computeCite(url) {
 
 
 
-
     //Find Date
     function searchParsed(parsedJson) {
         try {
-            if (Array.isArray(parsedJson.datePublished)) {
-                arrDates = parsedJson.datePublished[0]
+            if (Array.isArray(parsedJson.dateModified)) {
+                arrDates = parsedJson.dateModified[0];
             } else {
-                arrDates = parsedJson.datePublished
+                arrDates = parsedJson.dateModified;
             }
-            
-        } catch {
+            if (typeof arrDates === "undefined" || arrDates.length <= 0) {
+                if (Array.isArray(parsedJson["dateModified"])) {
+                    arrDates = parsedJson["dateModified"][0];
+                } else {
+                    arrDates = parsedJson["dateModified"];
+                }
+            }
+        } catch (e) {
+            console.log(e);
             for (var i = 0; i<parsedJson.length && arrDates.length <= 0; i++) {
-                if (parsedJson[i].datePublished){
-                    if (Array.isArray(parsedJson[i].datePublished)){
-                        arrDates = parsedJson[i].datePublished[0]
+                if (parsedJson[i].dateModified){
+                    if (Array.isArray(parsedJson[i].dateModified)){
+                        arrDates = parsedJson[i].dateModified[0];
                     } else {
-                        arrDates = parsedJson[i].datePublished
+                        arrDates = parsedJson[i].dateModified;
                     }
                 }
     
-                if (parsedJson[i].dateModified){
-                    if (Array.isArray(parsedJson[i].dateModified)){
-                        arrDates = parsedJson[i].dateModified[0]
+                if (parsedJson[i].datePublished){
+                    if (Array.isArray(parsedJson[i].datePublished)){
+                        arrDates = parsedJson[i].datePublished[0];
                     } else {
-                        arrDates = parsedJson[i].dateModified
+                        arrDates = parsedJson[i].datePublished;
                     }
                 }
 
@@ -1802,23 +1837,25 @@ async function computeCite(url) {
             let parsedJson = JSON.parse(responsexml.querySelectorAll('script[type="application/ld+json"]')[0].innerHTML)
             arrDates = searchParsed(parsedJson);
             try {
-                if (arrDates.length <= 0) {
-                    console.log("try parsed w/ @graph")
+                if (typeof arrDates !== "undefined") {
+                    if (arrDates.length <= 0) {
+                        arrDates = searchParsed(parsedJson["@graph"][0])
+                    }
                 } else {
-                    arrDates = searchParsed(parsedJson["@graph"][0])
+                    arrDates = searchParsed(parsedJson["@graph"][0]);
                 }
-            } catch {
-                console.log("try parsed w/ @graph")
-                arrDates = searchParsed(parsedJson["@graph"][0])
-            }
+            } catch {}
             try {
-                if (arrDates.length <= 0) {
-                    console.log("something found")
+                if (typeof arrDates !== "undefined") {
+                    if (arrDates.length <= 0) {
+                        console.log("try parsed w/out @graph")
+                        arrDates = searchParsed(parsedJson[0])
+                    }
+                } else {
+                    console.log("try parsed w/out @graph")
+                    arrDates = searchParsed(parsedJson[0])
                 }
-            } catch {
-                console.log("nothing found")
-            }
-            
+            } catch {}
         }
         catch(err)
         {
@@ -1826,6 +1863,7 @@ async function computeCite(url) {
             console.log(err)
         }
     }
+
     if (!arrDates || ((Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)) && arrDates.length == 0)) {
         arrDates = responsexml.getElementsByName("Date");
     } //Try Date
@@ -1945,15 +1983,26 @@ async function computeCite(url) {
         arrDates_col = responsexml.getElementsByClassName("node__published");
         arrDates = Array.prototype.slice.call(arrDates_col);
     }
-    for (i = 0; i < arrMeta.length; i++) {
-        if (arrMeta[i].getAttribute("name") == "dc.Date") {
-            arrDates = [arrMeta[i].content];
-        } //Try dc.Date meta tag
+    if (!arrDates || ((Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)) && arrDates.length == 0)) {
+        for (i = 0; i < arrMeta.length; i++) {
+            if (arrMeta[i].getAttribute("name") == "dc.Date") {
+                arrDates = [arrMeta[i].content];
+            } //Try dc.Date meta tag
+        }
     }
-    for (i = 0; i < arrMeta.length; i++) {
-        if (arrMeta[i].getAttribute("property") == "og:updated_time") {
-            arrDates = [arrMeta[i].content];
-        } //Try og:updated time meta tag
+    if (!arrDates || ((Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)) && arrDates.length == 0)) {
+        for (i = 0; i < arrMeta.length; i++) {
+            if (arrMeta[i].getAttribute("property") == "og:updated_time") {
+                arrDates = [arrMeta[i].content];
+            } //Try og:updated time meta tag
+        }
+    }
+    if (!arrDates || ((Array.isArray(arrDates) || NodeList.prototype.isPrototypeOf(arrDates)) && arrDates.length == 0)) {
+        for (i = 0; i < arrMeta.length; i++) {
+            if (arrMeta[i].getAttribute("name") == "citation_publication_date") {
+                arrDates = [arrMeta[i].content];
+            } //Try og:updated time meta tag
+        }
     }
     //If anything found, assign it to Date
     try {
@@ -2046,7 +2095,7 @@ async function computeCite(url) {
     //Convert date with parser
     if (strDate != null && typeof strDate != 'undefined') {
         //Clean up date if it has a combined date/time code that breaks parser
-        if (strDate.length > 10 && strDate.indexOf(" ") == -1 && strDate.indexOf("T") == 10) {
+        if (strDate.length > 10){// && strDate.indexOf(" ") == -1 && strDate.indexOf("T") == 10) {
             strDate = strDate.slice(0, 10);
         }
         strDate = strDate.toLowerCase()
@@ -2062,8 +2111,9 @@ async function computeCite(url) {
         strDate = strDate.replaceAll("sun","");
         strDate = strDate.replaceAll("on","");
         strDate = strDate.replaceAll("updated","");
-        
+
         d = Date.parse(strDate);
+
         if (!(d != null && d != "Invalid Date")) {
             //regex from before
             strBodyText = strDate
@@ -2126,8 +2176,6 @@ async function computeCite(url) {
             }
         }
         
-
-        console.log(d)
         if (d != null && d != "Invalid Date") { //if it still fails
             Year = d.getFullYear();
             ShortYear = Year.toString()
@@ -2330,6 +2378,33 @@ async function computeCite(url) {
             console.log(arrLinks);
         }*/
 
+        //NLM/NIH + meta tags
+        if (arrAqs.length <= 0) {
+            for (i = 0; i < arrMeta.length; i++) {
+                if (arrMeta[i].getAttribute("name") == "citation_author_institution") {
+                    aqs = arrMeta[i].content;
+                    if (typeof aqs !== "undefined") {
+                        break;
+                    }
+                } 
+            }
+        }
+        //FORBES + application/ld+json
+        if (aqs == "" || typeof aqs === "undefined") {
+            try {
+                let parsedJson = JSON.parse(responsexml.querySelectorAll('script[type="application/ld+json"]')[0].innerHTML)
+                console.log(parsedJson);
+                try {
+                    aqs = parsedJson.author[0].description;
+                    console.log(aqs);
+                } catch {}
+            }
+            catch(err)
+            {
+                aqs = "";
+                console.log(err);
+            }
+        }
 
         if (!aqs || typeof aqs === "undefined") {
             aqs = arrAqs[0];
@@ -2344,6 +2419,25 @@ async function computeCite(url) {
 
         if (aqs == "" || typeof aqs === "undefined") { //last resor
             var strBodyText = responsexml.body.innerText;
+
+            //test all divs
+            var listofdivtags = responsexml.getElementsByTagName("div");
+            var alltext = "";
+            for (var i = 0; i < listofdivtags.length; i++) {
+                //console.log(listofptags[i].innerText)
+                text = listofdivtags[i].innerText
+                begins = text.charAt(0) == " ";
+                ends = text.charAt(text.length-1) == " ";
+                text = text.trim();
+                if (begins) {
+                    text = " " + text
+                }
+                if (ends) {
+                    text = text + " "
+                }
+                alltext += text;
+            }
+            strBodyText = alltext;
             aqs = ""
             //look for author + is
             let searchStr = strName + " is ";
