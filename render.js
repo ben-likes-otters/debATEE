@@ -227,9 +227,10 @@ chrome.tabs.query({active: true, lastFocusedWindow: true}, tabs => {
             if (ends) {
                 text = text + " "
             }
-            alltext += text;
+            alltext += text + "¶";
+            console.log("¶")
         }
-        alltext = alltext.replaceAll("\n"," ");
+        alltext = alltext.replaceAll("\n","¶");
         //alltext = alltext.replaceAll(".",". ");
         alltext = alltext.replaceAll(" .",".");
         alltext = alltext.replaceAll("  ", " ");
@@ -237,8 +238,8 @@ chrome.tabs.query({active: true, lastFocusedWindow: true}, tabs => {
         alltext = alltext.replaceAll("   ", "");
         alltext = alltext.replaceAll("U. S. ", "U.S.");
         alltext = alltext.replaceAll(/U\.S\.(?=[a-zA-Z])/g,"U.S. ");
-
-        console.log(alltext);
+        alltext = alltext.replaceAll("Â","")
+        console.log("¶");
         /*anchor = result.anchor;
         focus = result.focus;
         var start = anchor > focus ? focus : anchor;
